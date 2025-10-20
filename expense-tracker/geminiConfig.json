@@ -1,0 +1,6 @@
+{
+    "thinkingConfig": {
+        "includeThoughts": true,
+        "maxTokens": 400
+    }
+}
