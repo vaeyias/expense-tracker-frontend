@@ -24,7 +24,7 @@ const displayName = computed(() => userStore.currentUser?.displayName || '');
   gap: 2rem;
   align-items: center;
   justify-content: end;
-  position: fixed;
+  /* position: absolute; */
   top: 0;
   left: 0;
   z-index: 1000;

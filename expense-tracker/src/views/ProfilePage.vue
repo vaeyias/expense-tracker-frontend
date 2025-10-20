@@ -87,11 +87,15 @@ const startEditing = () => {
 
 <style scoped>
 .profile-container {
-  max-width: 500px;
-  margin: 100px auto;
+  width: 100vw;
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  justify-content:left;
+  padding:2rem;
+  color:black;
+
+
 }
 
 .edit-section {
@@ -104,12 +108,14 @@ input {
   flex: 1;
   padding: 0.5rem;
   font-size: 1rem;
+
 }
 
 button {
   padding: 0.5rem 1rem;
   cursor: pointer;
   border-radius:0.5rem;
+  width:5rem;
 }
 
 .logout-btn {

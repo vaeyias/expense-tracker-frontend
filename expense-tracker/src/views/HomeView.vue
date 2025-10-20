@@ -121,10 +121,14 @@ onMounted(loadFolders);
 <style scoped>
 .home-container {
   display: flex;
+  width:100vw;
+  padding:2rem;
+
   gap: 2rem;
-  max-width: 1200px;
-  margin: 50px auto;
   justify-content:left;
+  background-color:white;
+  color:black;
+
 }
 
 /* Sidebar */
@@ -141,7 +145,7 @@ onMounted(loadFolders);
   padding: 0.5rem 1rem;
   border-radius: 0.25rem;
   border: none;
-  background-color: #1976d2;
+  background-color: black;
   color: white;
   cursor: pointer;
   transition: background-color 0.2s;
