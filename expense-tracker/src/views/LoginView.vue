@@ -51,7 +51,6 @@ const login = async () => {
       return;
     }
 
-
     // Store user info globally and locally
     const userInfo = { _id: res.data.user, username: username.value, displayName:userInfoRes.data.userInfo.displayName };
     console.log(userInfoRes.data.userInfo.displayName);

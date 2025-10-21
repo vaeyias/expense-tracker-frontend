@@ -204,8 +204,6 @@ const handleGroupClick = (group: Group) => {
   }
 };
 
-
-
 const openGroupModal = () => {
   newGroupName.value = '';
   newGroupDescription.value = '';
@@ -238,9 +236,7 @@ const createGroupConfirm = async () => {
 
     const group: Group = res.data.group;
 
-
     // Add the group to the current folder
-
     if (currentFolder.value){
       console.log('folder',currentFolder.value);
       await axios.post('http://localhost:8000/api/Folder/addGroupToFolder', {
@@ -276,9 +272,6 @@ const createGroupConfirm = async () => {
     groupErrorMsg.value = 'Failed to create group.';
   }
 };
-
-
-
 
 onMounted(() => loadFolders());
 </script>
@@ -319,8 +312,6 @@ onMounted(() => loadFolders());
         />
       </div>
 
-
-
     <!-- Display groups after folders -->
     <div class="folders-grid"    >
      <GroupIcon
@@ -332,7 +323,6 @@ onMounted(() => loadFolders());
 />
 
     </div>
-
 
     </main>
     <!-- Rename Folder Modal -->

@@ -16,7 +16,6 @@ interface Debt {
 const debts = ref<Debt[]>([])
 const errorMsg = ref('')
 
-// For recording payment
 const showPaymentModal = ref(false)
 const selectedDebt = ref<Debt | null>(null)
 const paymentAmount = ref<number | null>(null)
@@ -65,6 +64,7 @@ const recordPayment = async () => {
   let payer = ''
   let receiver = ''
 
+    //   check for who is paying
   if (paymentDirection.value === 'youPay') {
     payer = currentUser.value
     receiver = debt.userA._id === currentUser.value ? debt.userB._id : debt.userA._id
@@ -92,6 +92,7 @@ const recordPayment = async () => {
 }
 
 onMounted(loadDebts)
+
 </script>
 
 <template>

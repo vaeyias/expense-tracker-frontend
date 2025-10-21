@@ -25,7 +25,6 @@ const props = defineProps<{
   margin: 1rem;
 }
 
-
 .group-card h3 {
   margin: 0;
   font-size: 1rem;

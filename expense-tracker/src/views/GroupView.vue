@@ -121,7 +121,7 @@ onMounted(async () => {
       <span class="expense-action">Action</span>
     </div>
 
-    <!-- Expenses -->
+    <!-- Expenses display in a list -->
     <div class="expenses-list">
       <div class="expense-row" v-for="expense in expenses" :key="expense._id">
         <span class="expense-date">{{ new Date(expense.date).toLocaleDateString() }}</span>
@@ -217,7 +217,6 @@ onMounted(async () => {
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
-/* Expense List Styling */
 .expenses-list {
   display: flex;
   flex-direction: column;

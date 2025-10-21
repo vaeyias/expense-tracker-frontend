@@ -35,7 +35,7 @@ const saveDisplayName = async () => {
       return;
     }
 
-    // Update localStorage
+    // Update localStorage with user
     currentUser.displayName = displayName.value;
     localStorage.setItem('currentUser', JSON.stringify(currentUser));
 

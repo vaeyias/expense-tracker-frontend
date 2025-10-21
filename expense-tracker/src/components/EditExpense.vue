@@ -78,7 +78,7 @@ const loadExpense = async () => {
     totalCost.value = data.totalCost
     payer.value = data.payer._id || data.payer
 
-    // load splits
+    // load splits to populate in the fields
     const splitsRes = await axios.post('http://localhost:8000/api/Expense/_getSplitsByExpense', {
       expenseId: props.expenseId
     })
@@ -105,7 +105,6 @@ const availableMembersForSplit = (currentUserId: string) => {
 
   return members.value.filter(m => !selectedIds.includes(m._id));
 };
-
 
 const addSplit = () => userSplits.value.push({ userId: '', amount: null })
 const removeSplit = (index: number) => userSplits.value.splice(index, 1)
@@ -198,7 +197,6 @@ const updateExpense = async () => {
     console.error('Error updating expense', err)
   }
 }
-
 
 const deleteExpense = async () => {
   if (!confirm('Are you sure you want to delete this expense?')) return

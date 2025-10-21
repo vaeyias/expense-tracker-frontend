@@ -13,8 +13,8 @@ import NavBar from './components/NavBar.vue';
 body {
   position:fixed;
   display: flex;
-  flex-direction: column; /* stack children vertically */
-  height: 100vh; /* optional, to cover full viewport */
+  flex-direction: column;
+  height: 100vh;
   width:100vw;
   top:0;
   left:0;
@@ -23,6 +23,6 @@ body {
 
 }
 router-view {
-  flex: 1; /* take remaining space */
+  flex: 1;
 }
 </style>

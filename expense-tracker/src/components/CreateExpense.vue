@@ -65,8 +65,6 @@ if (!title.value || !category.value || !totalCost.value || !payer.value) {
   return
 }
 
-
-
 // Validate split amounts
 const sumOfSplits = userSplits.value.reduce((acc, split) => acc + (split.amount || 0), 0)
 if (sumOfSplits !== totalCost.value) {
@@ -170,6 +168,7 @@ emit('close')
       <div v-for="(split, index) in userSplits" :key="index" class="split-row">
         <select v-model="split.userId">
           <option value="">Select User</option>
+          <!-- dropdown for users when adding split -->
           <option v-for="m in availableMembersForSplit(split.userId)" :key="m._id" :value="m._id">
             {{ m.displayName }}
           </option>

@@ -49,6 +49,7 @@ const addUser = async () => {
   }
 
   try {
+    // look for info of member to add
     const userRes = await axios.post('http://localhost:8000/api/Authentication/_getUserByUsername', { username: newUsername.value });
     const newUserId = userRes.data.userInfo?._id;
 

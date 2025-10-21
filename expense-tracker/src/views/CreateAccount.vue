@@ -52,7 +52,6 @@ const createAccount = async () => {
       return;
     }
 
-
     const userInfo = {
       _id: res.data.user,
       username: username.value,
@@ -95,30 +94,3 @@ button {
   color: red;
 }
 </style>
-
-<!--
-<style scoped>
-.create-account-container {
-  max-width: 400px;
-  margin: 100px auto;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  text-align: center;
-}
-
-input {
-  padding: 8px;
-  width: 80%;
-  margin: 0 auto;
-}
-
-button {
-  padding: 8px 12px;
-  margin: 5px;
-}
-
-.error {
-  color: red;
-}
-</style> -->
