@@ -1,16 +1,8 @@
 <template>
-  <div class="folder-icon" @click="$emit('click')">
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="currentColor"
-      viewBox="0 0 24 24"
-      width="80"
-      height="80"
-    >
-      <!-- group icon -->
-      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-    </svg>
-    <p>{{ name }}</p>
+  <div class="group-card" @click="$emit('click')">
+<img src="../assets/groupIcon.png" alt="groupIcon" width="80" height="80">
+    <h3>{{ name }}</h3>
+    <p>{{ description }}</p>
   </div>
 </template>
 
@@ -19,22 +11,29 @@ import { defineProps } from 'vue';
 
 const props = defineProps<{
   name: string;
+  description: string;
 }>();
 </script>
 
 <style scoped>
-.folder-icon {
+.group-card {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  gap: 0.5rem; /* same spacing as FolderIcon */
+  margin: 1rem;
 }
 
-.folder-icon p {
-  font-size: 1rem; /* same text size as FolderIcon */
-  text-align: center;
+
+.group-card h3 {
   margin: 0;
+  font-size: 1rem;
+}
+
+.group-card p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #555;
 }
 </style>

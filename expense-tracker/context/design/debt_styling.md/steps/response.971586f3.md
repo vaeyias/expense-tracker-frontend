@@ -1,3 +1,14 @@
+---
+timestamp: 'Tue Oct 21 2025 12:14:42 GMT-0400 (Eastern Daylight Time)'
+parent: '[[..\20251021_121442.794f4584.md]]'
+content_id: 971586f3ca476313517bb9482dcf1592717fa677e0a810e20042f381e2cb9ac8
+---
+
+# response:
+
+```vue
+# debt-styling
+
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
@@ -171,18 +182,24 @@ onMounted(loadDebts)
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   padding: 20px;
   color: #333;
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
 h2 {
   color: #2c3e50;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
   border-bottom: 2px solid #e0e0e0;
-  padding-bottom: 10px;
+  padding-bottom: 12px;
+  font-weight: 600;
 }
 
 .no-debts-message {
   color: #7f8c8d;
   font-style: italic;
+  text-align: center;
+  padding: 20px 0;
 }
 
 .debt-list {
@@ -195,10 +212,10 @@ h2 {
   background-color: #fdfdfd;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   padding: 15px 20px;
   cursor: pointer;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -206,24 +223,27 @@ h2 {
 
 .debt-item:hover {
   background-color: #f0f8ff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
 }
 
 .debt-details {
   font-size: 1rem;
-  line-height: 1.5;
+  line-height: 1.6;
+  color: #555;
 }
 
 .debt-you-owe {
-  color: #c0392b; /* Red for amounts you owe */
+  color: #c0392b; /* Slightly desaturated red for amounts you owe */
 }
 
 .debt-they-owe {
-  color: #27ae60; /* Green for amounts others owe you */
+  color: #27ae60; /* Slightly desaturated green for amounts others owe you */
 }
 
 .amount {
   font-weight: 600;
+  color: inherit; /* Inherit color from parent span */
 }
 
 /* Modal Styles */
@@ -238,23 +258,26 @@ h2 {
   align-items: center;
   background-color: rgba(0, 0, 0, 0.5);
   z-index: 1000;
+  backdrop-filter: blur(5px); /* Add a subtle blur effect */
 }
 
 .modal {
-  background-color: #fff;
+  background-color: #ffffff;
   padding: 30px;
   border-radius: 12px;
   width: 90%;
   max-width: 400px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
   text-align: center;
+  border: 1px solid #eee;
 }
 
 .modal-title {
   color: #2c3e50;
   margin-top: 0;
   margin-bottom: 25px;
-  font-size: 1.5rem;
+  font-size: 1.7rem;
+  font-weight: 700;
 }
 
 .payment-direction-row {
@@ -270,6 +293,7 @@ h2 {
 .user-label {
   flex-shrink: 0;
   font-size: 1.1rem;
+  color: #333;
 }
 
 .direction-select {
@@ -281,6 +305,10 @@ h2 {
   background-color: #f9f9f9;
   cursor: pointer;
   transition: border-color 0.2s ease;
+  background-image: url('data:image/svg+xml;utf8,<svg fill="%23333" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 8px top 50%;
+  padding-right: 30px; /* Space for the arrow icon */
 }
 
 .direction-select:hover {
@@ -294,7 +322,14 @@ h2 {
   border-radius: 8px;
   border: 1px solid #ccc;
   font-size: 1.1rem;
-  box-sizing: border-box;
+  box-sizing: border-box; /* Include padding and border in the element's total width and height */
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.payment-input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
 }
 
 .payment-input::placeholder {
@@ -307,6 +342,7 @@ h2 {
   margin-bottom: 15px;
   font-size: 0.9rem;
   height: 1.2em; /* Reserve space for the error message */
+  font-weight: 500;
 }
 
 .modal-actions {
@@ -324,26 +360,33 @@ h2 {
   cursor: pointer;
   font-weight: 600;
   font-size: 1rem;
-  transition: background-color 0.2s ease, transform 0.1s ease;
+  transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .submit-button {
   background-color: #3498db;
   color: white;
+  box-shadow: 0 2px 5px rgba(52, 152, 219, 0.3);
 }
 
 .submit-button:hover {
   background-color: #2980b9;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(52, 152, 219, 0.4);
 }
 
 .cancel-button {
   background-color: #e74c3c;
   color: white;
+  box-shadow: 0 2px 5px rgba(231, 76, 60, 0.3);
 }
 
 .cancel-button:hover {
   background-color: #c0392b;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(192, 57, 43, 0.4);
 }
 </style>
+```

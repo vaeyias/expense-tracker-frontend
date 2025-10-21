@@ -298,7 +298,7 @@ onMounted(() => loadFolders());
         <div class="folder-actions">
           <button v-if="currentFolder" @click="goToParent">⬅ Back</button>
 
-          <!-- Only show rename/delete if not root -->
+          <!-- Only show rename/delete if user is not at root -->
         </div>
         <h2>{{ currentFolder?.name || 'Home' }}</h2>
 

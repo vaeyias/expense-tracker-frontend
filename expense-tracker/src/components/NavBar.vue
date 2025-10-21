@@ -17,20 +17,19 @@ const displayName = computed(() => userStore.currentUser?.displayName || '');
 <style scoped>
 .navbar {
   width: 100%;
-  background-color: #333;
+  background-color: black;
   color: white;
   padding: 0.5rem 1.5rem;
   display: flex;
   gap: 2rem;
   align-items: center;
   justify-content: end;
-  /* position: absolute; */
   top: 0;
   left: 0;
   z-index: 1000;
 }
 .username {
-  margin-right: auto; /* pushes links to the right */
+  margin-right: auto;
   font-weight: bold;
 }
 .navbar a {

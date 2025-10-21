@@ -1,14 +1,15 @@
 <template>
   <div class="folder-icon" @click="$emit('click')">
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="currentColor"
-      viewBox="0 0 24 24"
-      width="80"
-      height="80"
-    >
-      <path d="M10 4H2v16h20V6H12l-2-2z"/>
-    </svg>
+      <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    class="folder-icon"
+    :width="80"
+    :height="80"
+  >
+    <!-- Folder Body -->
+    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5l3 3h9a2 2 0 0 1 2 2z"></path>
+  </svg>
     <p>{{ name }}</p>
   </div>
 </template>
@@ -28,11 +29,11 @@ const props = defineProps<{
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  gap: 0.5rem; /* increase spacing for bigger icon */
+  margin:0.5rem;
 }
 
 .folder-icon p {
-  font-size: 1rem; /* slightly larger text */
+  font-size: 1rem;
   text-align: center;
   margin: 0;
 }
