@@ -1,3 +1,14 @@
+---
+timestamp: 'Tue Oct 21 2025 00:08:19 GMT-0400 (Eastern Daylight Time)'
+parent: '[[..\20251021_000819.526edf07.md]]'
+content_id: f00803ee0d7aee38c9af7e3d51e7512cab2fca75e78ec9cd1df0d63917bba095
+---
+
+# response:
+
+```vue
+# debt-styling
+
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
@@ -347,3 +358,4 @@ h2 {
   transform: translateY(-1px);
 }
 </style>
+```

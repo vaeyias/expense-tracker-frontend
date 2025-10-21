@@ -4,6 +4,7 @@ import LoginView from '../views/LoginView.vue'
 import CreateAccount from '../views/CreateAccount.vue'
 import ProfilePage from '../views/ProfilePage.vue'
 import GroupView from '../views/GroupView.vue'
+import DebtView from '../views/DebtView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -35,6 +36,14 @@ const router = createRouter({
     component: GroupView,
     props: true, // allows us to pass groupId as a prop
   },
+
+      {
+    path: '/debts',
+    name: 'Debt',
+    component: DebtView,
+    props: true,
+  },
+
 
 
   ],

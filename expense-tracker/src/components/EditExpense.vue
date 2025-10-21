@@ -205,6 +205,54 @@ const updateExpense = async () => {
     console.error('Error updating expense', err)
   }
 }
+
+
+const deleteExpense = async () => {
+  if (!confirm('Are you sure you want to delete this expense?')) return
+
+  try {
+    // 1️⃣ Reverse debts from current splits before deleting
+    const splitsRes = await axios.post('http://localhost:8000/api/Expense/_getSplitsByExpense', {
+      expenseId: props.expenseId
+    })
+    const splits = Array.isArray(splitsRes.data.splits) ? splitsRes.data.splits : []
+
+    for (const split of splits) {
+      try {
+        const userId = split.user._id || split.user
+        const amount = split.amountOwed
+        await axios.post('http://localhost:8000/api/Debt/updateDebt', {
+          payer: payer.value,
+          receiver: userId,
+          amount: -amount, // reverse effect
+        })
+
+      await axios.post('http://localhost:8000/api/Expense/removeUserSplit', {
+        expense: props.expenseId,
+        userSplit: split._id
+      })
+
+      } catch (err) {
+        console.error(`Error reversing debt for ${split.user._id}`, err)
+      }
+    }
+
+    // 2️⃣ Delete the expense
+    const res = await axios.post('http://localhost:8000/api/Expense/deleteExpense', {
+      expenseToDelete: props.expenseId
+    })
+    if (res.data.error) {
+      errorMsg.value = res.data.error
+      return
+    }
+
+    emit('refresh')
+    emit('close')
+  } catch (err) {
+    console.error('Error deleting expense', err)
+  }
+}
+
 </script>
 
 <template>
@@ -248,9 +296,11 @@ const updateExpense = async () => {
       <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
 
       <div class="modal-buttons">
-        <button @click="updateExpense">Save</button>
-        <button @click="emit('close')">Cancel</button>
-      </div>
+  <button @click="updateExpense">Save</button>
+  <button @click="deleteExpense" class="delete-btn">Delete</button>
+  <button @click="emit('close')">Cancel</button>
+</div>
+
     </div>
   </div>
 </template>
@@ -285,6 +335,11 @@ const updateExpense = async () => {
   gap: 1rem;
   margin-top: 1rem;
 }
+.delete-btn {
+  background-color: red;
+  color: white;
+}
+
 .error {
   color: red;
 }

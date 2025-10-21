@@ -3,15 +3,14 @@ import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import { useUserStore } from '../stores/user';
 
-// Get current user ID from Pinia store
 const userStore = useUserStore();
 const currentUser = computed(() => userStore.currentUser?._id || '');
 
 interface User {
   _id: string;
   username: string;
-  displayName:string;
-  password:string;
+  displayName: string;
+  password: string;
 }
 
 const props = defineProps<{ groupId: string }>();
@@ -20,48 +19,44 @@ const emit = defineEmits<{
 }>();
 
 const users = ref<User[]>([]);
-const newUsername = ref(''); // let user type username
+const newUsername = ref('');
 const errorMsg = ref('');
 
-// Load members of the group
+// Load members
 const loadUsers = async () => {
   try {
     const res = await axios.post('http://localhost:8000/api/Group/_listMembers', { group: props.groupId });
-
     const memberIds: string[] = Array.isArray(res.data.members) ? res.data.members : [];
     const allMembers: User[] = [];
-    console.log(memberIds);
 
     for (const userId of memberIds) {
-      const userObjRes = await axios.post('http://localhost:8000/api/Authentication/_getUserById', {
-        user:userId,
-      });
-      console.log(userObjRes);
+      const userObjRes = await axios.post('http://localhost:8000/api/Authentication/_getUserById', { user: userId });
       if (userObjRes.data) allMembers.push(userObjRes.data.userInfo);
     }
 
     users.value = allMembers;
   } catch (err) {
     console.error(err);
+    errorMsg.value = 'Failed to load users.';
   }
 };
 
-// Add user by username
+// Add user
 const addUser = async () => {
-  if (!newUsername.value) return;
+  if (!newUsername.value) {
+    errorMsg.value = 'Please enter a username.';
+    return;
+  }
 
   try {
-    // Lookup user ID by username
-    const userRes = await axios.post('http://localhost:8000/api/Authentication/_getUserByUsername', {
-      username: newUsername.value
-    });
-    const newUserId = userRes.data.userInfo._id;
+    const userRes = await axios.post('http://localhost:8000/api/Authentication/_getUserByUsername', { username: newUsername.value });
+    const newUserId = userRes.data.userInfo?._id;
+
     if (!newUserId) {
-      errorMsg.value = 'User not found';
+      errorMsg.value = 'User not found.';
       return;
     }
 
-    // Add the user to the group
     const res = await axios.post('http://localhost:8000/api/Group/addUser', {
       group: props.groupId,
       inviter: currentUser.value,
@@ -73,28 +68,29 @@ const addUser = async () => {
       return;
     }
 
-    // ✅ Create debts between new member and all existing members
+    // Create debts
     for (const member of users.value) {
-      if (member._id === newUserId) continue; // skip self
-
+      if (member._id === newUserId) continue;
       try {
-        await axios.post('http://localhost:8000/api/Debt/createDebt', {
-          userA: newUserId,
-          userB: member._id,
-        });
-      } catch (err: any) {
-        console.log(`Debt between ${newUserId} and ${member._id} already exists or failed:`, err.response?.data?.error || err);
-      }
+        await axios.post('http://localhost:8000/api/Debt/createDebt', { userA: newUserId, userB: member._id });
+      } catch {}
+      await axios.post('http://localhost:8000/api/Folder/addGroupToFolder', {
+        user: currentUser.value,
+        folderName: '.root',
+        group: props.groupId,
+      });
     }
 
     newUsername.value = '';
+    errorMsg.value = '';
     await loadUsers();
   } catch (err) {
     console.error(err);
+    errorMsg.value = 'Failed to add user.';
   }
 };
 
-// Remove a user from the group
+// Remove user
 const removeUser = async (userId: string) => {
   try {
     const res = await axios.post('http://localhost:8000/api/Group/removeUser', {
@@ -106,38 +102,39 @@ const removeUser = async (userId: string) => {
       errorMsg.value = res.data.error;
       return;
     }
+    errorMsg.value = '';
     await loadUsers();
   } catch (err) {
     console.error(err);
+    errorMsg.value = 'Failed to remove user.';
   }
 };
 
 onMounted(loadUsers);
 </script>
 
-
 <template>
   <div class="modal-overlay">
     <div class="modal">
-      <h3>Group Users</h3>
+      <h3 class="modal-title">Group Users</h3>
 
-      <input v-model="newUsername" placeholder="Add user by username" />
-      <button @click="addUser">Add</button>
+      <div class="input-group">
+        <input v-model="newUsername" placeholder="Add user by username" />
+        <button @click="addUser">Add</button>
+      </div>
+
       <p class="error" v-if="errorMsg">{{ errorMsg }}</p>
 
-<ul>
-  <li v-for="user in users" :key="user._id">
-    {{ user.displayName }}
-    <button
-      v-if="user._id !== currentUser"
-      @click="removeUser(user._id)"
-    >
-      Remove
-    </button>
-  </li>
-</ul>
+      <ul class="user-list">
+        <li v-for="user in users" :key="user._id">
+          {{ user.displayName }}
+          <button v-if="user._id !== currentUser" @click="removeUser(user._id)" class="remove-btn">
+            Remove
+          </button>
+        </li>
+      </ul>
 
-      <button @click="emit('close')">Close</button>
+      <button class="close-btn" @click="emit('close')">Close</button>
     </div>
   </div>
 </template>
@@ -149,15 +146,96 @@ onMounted(loadUsers);
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: rgba(0,0,0,0.5);
+  background-color: rgba(0,0,0,0.6);
   z-index: 2000;
-  color: black;
 }
+
 .modal {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 0.5rem;
+  background: #fff;
+  padding: 2rem;
+  border-radius: 0.75rem;
   width: 400px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
-.error { color: red; }
+
+.modal-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-align: center;
+}
+
+.input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+input {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+}
+
+button {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-radius: 0.5rem;
+  border: none;
+  background-color: black;
+  color: white;
+  font-weight: 500;
+}
+
+button:hover {
+  background-color: #357ABD;
+}
+
+.user-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.user-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.5rem;
+  background-color: #f5f5f5;
+}
+
+.remove-btn {
+  background-color: black;
+}
+
+.remove-btn:hover {
+  background-color: #357ABD;
+}
+
+.error {
+  color: #e74c3c;
+  font-weight: 500;
+  margin-top: -0.5rem;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.close-btn {
+  margin-top: 1rem;
+  background-color: black;
+}
+
+.close-btn:hover {
+  background-color: #357ABD;
+}
 </style>
