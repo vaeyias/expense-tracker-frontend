@@ -101,6 +101,8 @@ onMounted(async () => {
 
 <template>
   <div class="group-view">
+    <button class="back-btn" @click="router.push('/')">← Back</button>
+
     <h2>{{ group?.name }}</h2>
     <div class="buttons-row">
       <button @click="showUsersModal = true">View / Manage Users</button>
@@ -157,6 +159,28 @@ onMounted(async () => {
 </template>
 
 <style scoped>
+
+.back-btn {
+  padding: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  border: none;
+  border-radius: 6px;
+  background-color: #333;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.back-btn:hover {
+  background-color: #555;
+  transform: translateY(-1px);
+}
+
+.back-btn:active {
+  transform: translateY(0);
+}
+
 .group-view {
   padding: 2rem;
   color: black;

@@ -75,7 +75,7 @@ const addUser = async () => {
         await axios.post('http://localhost:8000/api/Debt/createDebt', { userA: newUserId, userB: member._id });
       } catch {}
       await axios.post('http://localhost:8000/api/Folder/addGroupToFolder', {
-        user: currentUser.value,
+        user: newUserId,
         folderName: '.root',
         group: props.groupId,
       });

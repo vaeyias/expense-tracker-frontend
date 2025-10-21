@@ -32,7 +32,7 @@ const login = async () => {
   }
 
   try {
-    const res = await axios.post('http://localhost:8000/api/User/authenticate', {
+    const res = await axios.post('http://localhost:8000/api/Authentication/authenticate', {
       username: username.value,
       password: password.value,
     });
@@ -42,7 +42,7 @@ const login = async () => {
       return;
     }
 
-    const userInfoRes = await axios.post('http://localhost:8000/api/User/_getUserByUsername',{
+    const userInfoRes = await axios.post('http://localhost:8000/api/Authentication/_getUserByUsername',{
         username:username.value,
     })
 
