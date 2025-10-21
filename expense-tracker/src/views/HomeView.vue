@@ -224,7 +224,7 @@ const createGroupConfirm = async () => {
 
   try {
 
-    // 1. Create the group
+    // Create the group
     const res = await axios.post('http://localhost:8000/api/Group/createGroup', {
       creator: currentUser?._id,
       name: newGroupName.value.trim(),
@@ -239,7 +239,7 @@ const createGroupConfirm = async () => {
     const group: Group = res.data.group;
 
 
-    // 2. Add the group to the current folder
+    // Add the group to the current folder
 
     if (currentFolder.value){
       console.log('folder',currentFolder.value);
@@ -260,12 +260,12 @@ const createGroupConfirm = async () => {
 
     }
 
-    // 3. Update local list
+    // Update local list
     groups.value.push(group);
     await loadFolders(currentFolder.value?._id || null);
 
 
-    // 4. Close modal
+    // Close modal
     showGroupModal.value = false;
     newGroupName.value = '';
     newGroupDescription.value = '';
@@ -388,7 +388,6 @@ onMounted(() => loadFolders());
   color: black;
 }
 
-/* Sidebar */
 .sidebar {
   width: 220px;
   display: flex;
@@ -437,7 +436,6 @@ onMounted(() => loadFolders());
   gap: 1rem;
 }
 
-/* Modal styles */
 .modal-overlay {
   position: fixed;
   top: 0;

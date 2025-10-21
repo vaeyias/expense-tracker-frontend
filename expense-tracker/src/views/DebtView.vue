@@ -3,7 +3,6 @@ import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import { useUserStore } from '../stores/user'
 
-// ---------- STATE ----------
 const userStore = useUserStore()
 const currentUser = computed(() => userStore.currentUser?._id || '')
 
@@ -22,7 +21,6 @@ const showPaymentModal = ref(false)
 const selectedDebt = ref<Debt | null>(null)
 const paymentAmount = ref<number | null>(null)
 
-// ---------- LOAD DEBTS ----------
 const loadDebts = async () => {
   if (!currentUser.value) return
   try {
@@ -48,7 +46,6 @@ const loadDebts = async () => {
   }
 }
 
-// ---------- RECORD PAYMENT ----------
 const paymentDirection = ref<'youPay' | 'theyPay'>('youPay') // default selection
 
 const openPaymentModal = (debt: Debt) => {
@@ -215,11 +212,11 @@ h2 {
 }
 
 .debt-you-owe {
-  color: #c0392b; /* Red for amounts you owe */
+  color: #c0392b;
 }
 
 .debt-they-owe {
-  color: #27ae60; /* Green for amounts others owe you */
+  color: #27ae60;
 }
 
 .amount {
@@ -306,7 +303,7 @@ h2 {
   margin-top: 5px;
   margin-bottom: 15px;
   font-size: 0.9rem;
-  height: 1.2em; /* Reserve space for the error message */
+  height: 1.2em;
 }
 
 .modal-actions {

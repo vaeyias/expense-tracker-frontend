@@ -67,14 +67,14 @@ if (!title.value || !category.value || !totalCost.value || !payer.value) {
 
 
 
-// 🧮 Validate split amounts
+// Validate split amounts
 const sumOfSplits = userSplits.value.reduce((acc, split) => acc + (split.amount || 0), 0)
 if (sumOfSplits !== totalCost.value) {
   errorMsg.value = `Total of splits (${sumOfSplits}) must equal total cost (${totalCost.value})`
   return
 }
 
-// 1️⃣ Create a blank expense first
+// Create a blank expense first
 let expenseId: string
 try {
   const res = await axios.post('http://localhost:8000/api/Expense/createExpense', {
@@ -91,7 +91,7 @@ try {
   return
 }
 
-// 2️⃣ Add new splits
+// Add new splits
 for (const split of userSplits.value) {
   if (!split.userId || split.amount === null) continue
   try {
@@ -106,7 +106,7 @@ for (const split of userSplits.value) {
   }
 }
 
-// 3️⃣ Edit expense details
+// Edit expense details
 try {
   const res = await axios.post('http://localhost:8000/api/Expense/editExpense', {
     expenseToEdit: expenseId,
@@ -127,7 +127,7 @@ try {
   return
 }
 
-// 4️⃣ Update debts between payer and each user split
+// Update debts between payer and each user split
 for (const split of userSplits.value) {
   if (!split.userId || split.amount === null) continue
   try {

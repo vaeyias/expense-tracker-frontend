@@ -21,8 +21,6 @@ const emit = defineEmits<{
   (e: 'close'): void
   (e: 'refresh'): void
 }>()
-
-// -------------------- STATE --------------------
 const title = ref('')
 const description = ref('')
 const category = ref('')
@@ -34,9 +32,6 @@ const errorMsg = ref('')
 const members = ref<Member[]>([])
 const userSplits = ref<UserSplit[]>([])
 
-
-
-// -------------------- LOAD MEMBERS --------------------
 const loadMembers = async () => {
   try {
     const res = await axios.post('http://localhost:8000/api/Group/_listMembers', {
@@ -69,7 +64,6 @@ const loadMembers = async () => {
   }
 }
 
-// -------------------- LOAD EXPENSE --------------------
 const loadExpense = async () => {
   try {
     const res = await axios.post('http://localhost:8000/api/Expense/_getExpenseById', {
@@ -99,7 +93,6 @@ const loadExpense = async () => {
   }
 }
 
-// -------------------- ACTIONS --------------------
 onMounted(async () => {
   await loadMembers()
   await loadExpense()
@@ -130,13 +123,13 @@ const updateExpense = async () => {
   }
 
   try {
-    // 1️⃣ Get old splits
+    // Get old splits
     const oldSplitsRes = await axios.post('http://localhost:8000/api/Expense/_getSplitsByExpense', {
       expenseId: props.expenseId
     })
     const oldSplits = Array.isArray(oldSplitsRes.data.splits) ? oldSplitsRes.data.splits : []
 
-    // 2️⃣ Reverse debt effect of old splits
+    // Reverse debt effect of old splits
     for (const split of oldSplits) {
       try {
         const userId = split.user._id || split.user
@@ -152,7 +145,7 @@ const updateExpense = async () => {
       }
     }
 
-    // 3️⃣ Remove old splits from expense
+    // Remove old splits from expense
     for (const split of oldSplits) {
       await axios.post('http://localhost:8000/api/Expense/removeUserSplit', {
         expense: props.expenseId,
@@ -160,7 +153,7 @@ const updateExpense = async () => {
       })
     }
 
-    // 4️⃣ Add new splits and update debts
+    // Add new splits and update debts
     for (const split of userSplits.value) {
       if (!split.userId || split.amount === null) continue
 
@@ -183,7 +176,7 @@ const updateExpense = async () => {
       }
     }
 
-    // 5️⃣ Update expense details
+    // Update expense details
     const res = await axios.post('http://localhost:8000/api/Expense/editExpense', {
       expenseToEdit: props.expenseId,
       title: title.value,
@@ -211,7 +204,7 @@ const deleteExpense = async () => {
   if (!confirm('Are you sure you want to delete this expense?')) return
 
   try {
-    // 1️⃣ Reverse debts from current splits before deleting
+    // Reverse debts from current splits before deleting
     const splitsRes = await axios.post('http://localhost:8000/api/Expense/_getSplitsByExpense', {
       expenseId: props.expenseId
     })
@@ -224,7 +217,7 @@ const deleteExpense = async () => {
         await axios.post('http://localhost:8000/api/Debt/updateDebt', {
           payer: payer.value,
           receiver: userId,
-          amount: -amount, // reverse effect
+          amount: -amount,
         })
 
       await axios.post('http://localhost:8000/api/Expense/removeUserSplit', {
@@ -237,7 +230,7 @@ const deleteExpense = async () => {
       }
     }
 
-    // 2️⃣ Delete the expense
+    // Delete the expense
     const res = await axios.post('http://localhost:8000/api/Expense/deleteExpense', {
       expenseToDelete: props.expenseId
     })
