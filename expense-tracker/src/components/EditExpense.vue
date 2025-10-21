@@ -130,29 +130,60 @@ const updateExpense = async () => {
   }
 
   try {
-    // remove old splits
+    // 1️⃣ Get old splits
     const oldSplitsRes = await axios.post('http://localhost:8000/api/Expense/_getSplitsByExpense', {
       expenseId: props.expenseId
     })
-    for (const split of oldSplitsRes.data.splits) {
+    const oldSplits = Array.isArray(oldSplitsRes.data.splits) ? oldSplitsRes.data.splits : []
+
+    // 2️⃣ Reverse debt effect of old splits
+    for (const split of oldSplits) {
+      try {
+        const userId = split.user._id || split.user
+        const amount = split.amountOwed
+        // Subtract old split from debt: reverse the effect
+        await axios.post('http://localhost:8000/api/Debt/updateDebt', {
+          payer: payer.value,
+          receiver: userId,
+          amount: -amount, // reverse effect
+        })
+      } catch (err) {
+        console.error(`Error reversing debt for ${split.user._id}`, err)
+      }
+    }
+
+    // 3️⃣ Remove old splits from expense
+    for (const split of oldSplits) {
       await axios.post('http://localhost:8000/api/Expense/removeUserSplit', {
         expense: props.expenseId,
         userSplit: split._id
       })
     }
-    console.log(oldSplitsRes);
 
-    // add new splits
+    // 4️⃣ Add new splits and update debts
     for (const split of userSplits.value) {
       if (!split.userId || split.amount === null) continue
+
+      // Add user split to expense
       await axios.post('http://localhost:8000/api/Expense/addUserSplit', {
         expense: props.expenseId,
         user: split.userId,
         amountOwed: split.amount,
       })
+
+      // Apply new debt effect
+      try {
+        await axios.post('http://localhost:8000/api/Debt/updateDebt', {
+          payer: payer.value,
+          receiver: split.userId,
+          amount: split.amount,
+        })
+      } catch (err) {
+        console.error(`Error updating debt for ${split.userId}`, err)
+      }
     }
 
-    // update expense
+    // 5️⃣ Update expense details
     const res = await axios.post('http://localhost:8000/api/Expense/editExpense', {
       expenseToEdit: props.expenseId,
       title: title.value,

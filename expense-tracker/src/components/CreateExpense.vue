@@ -106,19 +106,7 @@ const createExpense = async () => {
     return
   }
 
-    // 🧹 Remove old splits
-  const oldSplits = await axios.post('http://localhost:8000/api/Expense/_getSplitsByExpense', {
-    expenseId: expenseId
-  })
-  console.log("hi",oldSplits)
-  for (const split of oldSplits.data.splits) {
-    await axios.post('http://localhost:8000/api/Expense/removeUserSplit', {
-      expenseId: expenseId,
-      userSplit: split._id
-    })
-  }
-
-  // 3️⃣ Add new splits
+  // 2️⃣ Add new splits
   for (const split of userSplits.value) {
     if (!split.userId || split.amount === null) continue
     try {
@@ -127,16 +115,13 @@ const createExpense = async () => {
         user: split.userId,
         amountOwed: split.amount,
       })
-      if (res.data.error) {
-        console.error('Error adding split', res.data.error)
-      }
+      if (res.data.error) console.error('Error adding split', res.data.error)
     } catch (err) {
       console.error('Error adding split', err)
     }
   }
 
-
-  // 2️⃣ Edit expense with actual details
+  // 3️⃣ Edit expense details
   try {
     const res = await axios.post('http://localhost:8000/api/Expense/editExpense', {
       expenseToEdit: expenseId,
@@ -146,21 +131,30 @@ const createExpense = async () => {
       totalCost: totalCost.value,
       date: new Date(date.value),
       payer: payer.value,
-
     })
     if (res.data.error) {
       errorMsg.value = res.data.error
       return
     }
   } catch (err) {
-    const deleteRes = await axios.post('http://localhost:8000/api/Expense/deleteExpense', {
-      expenseId:expenseId
-    })
-
+    await axios.post('http://localhost:8000/api/Expense/deleteExpense', { expenseId })
     console.error('Error editing expense', err)
     return
   }
 
+  // 4️⃣ Update debts between payer and each user split
+  for (const split of userSplits.value) {
+    if (!split.userId || split.amount === null) continue
+    try {
+      await axios.post('http://localhost:8000/api/Debt/updateDebt', {
+        payer: payer.value,
+        receiver: split.userId,
+        amount: split.amount,
+      })
+    } catch (err) {
+      console.error(`Error updating debt between ${payer.value} and ${split.userId}`, err)
+    }
+  }
 
   emit('refresh')
   emit('close')

@@ -52,7 +52,9 @@ const addUser = async () => {
 
   try {
     // Lookup user ID by username
-    const userRes = await axios.post('http://localhost:8000/api/Authentication/_getUserByUsername', { username: newUsername.value });
+    const userRes = await axios.post('http://localhost:8000/api/Authentication/_getUserByUsername', {
+      username: newUsername.value
+    });
     const newUserId = userRes.data.userInfo._id;
     if (!newUserId) {
       errorMsg.value = 'User not found';
@@ -69,6 +71,20 @@ const addUser = async () => {
     if (res.data.error) {
       errorMsg.value = res.data.error;
       return;
+    }
+
+    // ✅ Create debts between new member and all existing members
+    for (const member of users.value) {
+      if (member._id === newUserId) continue; // skip self
+
+      try {
+        await axios.post('http://localhost:8000/api/Debt/createDebt', {
+          userA: newUserId,
+          userB: member._id,
+        });
+      } catch (err: any) {
+        console.log(`Debt between ${newUserId} and ${member._id} already exists or failed:`, err.response?.data?.error || err);
+      }
     }
 
     newUsername.value = '';
