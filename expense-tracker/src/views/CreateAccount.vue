@@ -41,6 +41,18 @@ const createAccount = async () => {
       return;
     }
 
+    const folderRes = await axios.post('http://localhost:8000/api/Folder/createFolder', {
+      owner: res.data.user,
+      name: ".root",
+      parent: ".parent_root",
+    });
+
+    if (folderRes.data.error) {
+      errorMsg.value = folderRes.data.error;
+      return;
+    }
+
+
     const userInfo = {
       _id: res.data.user,
       username: username.value,

@@ -3,6 +3,7 @@ import HomeView from '../views/HomeView.vue'
 import LoginView from '../views/LoginView.vue'
 import CreateAccount from '../views/CreateAccount.vue'
 import ProfilePage from '../views/ProfilePage.vue'
+import GroupView from '../views/GroupView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -28,6 +29,13 @@ const router = createRouter({
       name:'profile',
       component:ProfilePage,
     },
+    {
+    path: '/group/:groupId',
+    name: 'GroupView',
+    component: GroupView,
+    props: true, // allows us to pass groupId as a prop
+  },
+
 
   ],
 })

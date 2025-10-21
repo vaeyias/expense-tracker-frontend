@@ -2,6 +2,9 @@
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import FolderIcon from '../components/FolderIcon.vue';
+import GroupIcon from '../components/GroupIcon.vue';
+import { useRouter } from 'vue-router';
+const router = useRouter();
 
 interface Folder {
   _id: string;
@@ -12,7 +15,6 @@ interface Folder {
 const folders = ref<Folder[]>([]);
 const newFolderName = ref('');
 const showFolderModal = ref(false);
-const showGroupModal = ref(false);
 const errorMsg = ref('');
 
 const showRenameModal = ref(false);
@@ -25,28 +27,76 @@ const currentFolder = ref<Folder | null>(null);
 const storedUser = localStorage.getItem('currentUser');
 const currentUser = storedUser ? JSON.parse(storedUser) : null;
 
+interface Group {
+  _id: string;
+  name: string;
+  description: string;
+  creator: string;
+}
+
+const groups = ref<Group[]>([]);
+const showGroupModal = ref(false);
+const newGroupName = ref('');
+const newGroupDescription = ref('');
+const groupErrorMsg = ref('');
+
+
 const loadFolders = async (folderId: string | null = null) => {
   if (!currentUser) return;
   try {
     let res;
     if (!folderId) {
-      // Root folders
       res = await axios.post('http://localhost:8000/api/Folder/_getRootFolder', {
         user: currentUser._id,
       });
       currentFolder.value = null;
     } else {
-      // Subfolders
       res = await axios.post('http://localhost:8000/api/Folder/_listSubfolders', {
         user: currentUser._id,
         parent: folderId,
       });
     }
     folders.value = res.data || [];
+
+    let groupRes=[];
+    // Fetch groups in current folder
+    if (folderId) {
+      groupRes = await axios.post('http://localhost:8000/api/Folder/_listGroupsInFolder', {
+        user: currentUser._id,
+        folder: folderId,
+      });
+    } else {
+      groupRes = await axios.post('http://localhost:8000/api/Folder/_listGroupsInFolderByName', {
+        user: currentUser._id,
+        name: '.root',
+      });;
+
+    }
+
+    console.log(groupRes.data);
+    const groupIds: string[] = Array.isArray(groupRes.data) ? groupRes.data : [];
+    console.log("hi",groupIds);
+    const fullGroups: Group[] = [];
+
+    for (const groupId of groupIds) {
+      const groupObjRes = await axios.post('http://localhost:8000/api/Group/_getGroup', {
+        group:groupId,
+      });
+      console.log(groupId,groupObjRes.data,groupObjRes.error);
+      if (groupObjRes.data) fullGroups.push(groupObjRes.data);
+    }
+
+
+    groups.value=fullGroups || [];
+
+    console.log("helllo",groups.value);
+
+
   } catch (err) {
     console.error(err);
   }
 };
+
 
 const openFolder = async (folder: Folder) => {
   currentFolder.value = folder;
@@ -149,10 +199,88 @@ const deleteFolder = async (folder: Folder) => {
   }
 };
 
+const handleGroupClick = (group: Group) => {
+  try {
+    if (!group?._id) throw new Error("Group ID is missing");
+    router.push({ name: 'GroupView', params: { groupId: group._id } });
+  } catch (err) {
+    console.error("Error navigating to group:", err);
+  }
+};
 
-const createGroup = () => {
+
+
+const openGroupModal = () => {
+  newGroupName.value = '';
+  newGroupDescription.value = '';
+  groupErrorMsg.value = '';
   showGroupModal.value = true;
 };
+
+const createGroupConfirm = async () => {
+
+  if (!newGroupName.value.trim()) {
+    groupErrorMsg.value = 'Group name cannot be empty.';
+    console.log("group name empty",res.data.error);
+
+    return;
+  }
+
+  try {
+
+    // 1. Create the group
+    const res = await axios.post('http://localhost:8000/api/Group/createGroup', {
+      creator: currentUser?._id,
+      name: newGroupName.value.trim(),
+      description: newGroupDescription.value.trim(),
+    });
+    if (res.data.error) {
+      console.log("error",res.data.error);
+      groupErrorMsg.value = res.data.error;
+      return;
+    }
+
+    const group: Group = res.data.group;
+
+
+    // 2. Add the group to the current folder
+
+    if (currentFolder.value){
+      console.log('folder',currentFolder.value);
+      await axios.post('http://localhost:8000/api/Folder/addGroupToFolder', {
+        user: currentUser?._id,
+        folderName: currentFolder.value.name,
+        group,
+      });
+    }
+    else{
+      await axios.post('http://localhost:8000/api/Folder/addGroupToFolder', {
+        user: currentUser?._id,
+        folderName: ".root",
+        group,
+      });
+      console.log("1111",)
+
+
+    }
+
+    // 3. Update local list
+    groups.value.push(group);
+    await loadFolders(currentFolder.value?._id || null);
+
+
+    // 4. Close modal
+    showGroupModal.value = false;
+    newGroupName.value = '';
+    newGroupDescription.value = '';
+    groupErrorMsg.value = '';
+
+  } catch (err) {
+    console.error(err);
+    groupErrorMsg.value = 'Failed to create group.';
+  }
+};
+
 
 
 
@@ -165,7 +293,7 @@ onMounted(() => loadFolders());
     <aside class="sidebar">
       <h2>Your Folders</h2>
       <button @click="showFolderModal = true">Create Folder</button>
-      <button @click="createGroup">Create Group</button>
+      <button @click="openGroupModal">Create Group</button>
     </aside>
 
     <!-- Main content -->
@@ -194,6 +322,22 @@ onMounted(() => loadFolders());
           @click="() => openFolder(folder)"
         />
       </div>
+
+
+
+    <!-- Display groups after folders -->
+    <div class="folders-grid"    >
+     <GroupIcon
+  v-for="group in groups"
+  :key="group._id"
+  :name="group.name"
+  :description="group.description"
+  @click="() => handleGroupClick(group)"
+/>
+
+    </div>
+
+
     </main>
     <!-- Rename Folder Modal -->
   <div v-if="showRenameModal" class="modal-overlay">
@@ -221,16 +365,19 @@ onMounted(() => loadFolders());
       </div>
     </div>
 
-    <!-- Group Creation Modal -->
-    <div v-if="showGroupModal" class="modal-overlay">
-      <div class="modal">
-        <h3>Create Group</h3>
-        <p>Group creation functionality goes here.</p>
-        <div class="modal-buttons">
-          <button @click="showGroupModal = false">Close</button>
-        </div>
-      </div>
+<!-- Group Creation Modal -->
+<div v-if="showGroupModal" class="modal-overlay">
+  <div class="modal">
+    <h3>Create Group</h3>
+    <input v-model="newGroupName" placeholder="Group Name" />
+    <textarea v-model="newGroupDescription" placeholder="Group Description"></textarea>
+    <p class="error" v-if="groupErrorMsg">{{ groupErrorMsg }}</p>
+    <div class="modal-buttons">
+      <button @click="createGroupConfirm">Create</button>
+      <button @click="showGroupModal = false">Cancel</button>
     </div>
+  </div>
+</div>
   </div>
 </template>
 
@@ -332,4 +479,6 @@ onMounted(() => loadFolders());
   color: red;
   font-size: 0.9rem;
 }
+
+
 </style>
