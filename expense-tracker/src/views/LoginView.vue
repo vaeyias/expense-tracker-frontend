@@ -74,6 +74,7 @@ const goToCreateAccount = () => router.push('/register');
   max-width: 400px;
   margin: 100px auto;
   text-align: center;
+  color:black;
 }
 
 input {

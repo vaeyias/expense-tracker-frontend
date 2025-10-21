@@ -12,16 +12,21 @@ interface UserSplit {
   amount: number | null
 }
 
-const props = defineProps<{ groupId: string }>()
+const props = defineProps<{
+  groupId: string
+  expenseId: string
+}>()
+
 const emit = defineEmits<{
   (e: 'close'): void
   (e: 'refresh'): void
 }>()
 
+// -------------------- STATE --------------------
 const title = ref('')
 const description = ref('')
 const category = ref('')
-const date = ref(new Date().toISOString().slice(0, 10)) // yyyy-mm-dd
+const date = ref(new Date().toISOString().slice(0, 10))
 const totalCost = ref<number | null>(null)
 const payer = ref('')
 const errorMsg = ref('')
@@ -29,31 +34,76 @@ const errorMsg = ref('')
 const members = ref<Member[]>([])
 const userSplits = ref<UserSplit[]>([])
 
-// Fetch members in group to populate dropdown
+
+
+// -------------------- LOAD MEMBERS --------------------
 const loadMembers = async () => {
   try {
     const res = await axios.post('http://localhost:8000/api/Group/_listMembers', {
       group: props.groupId,
     })
-    console.log("heya",res);
-    const memberIds: string[] = Array.isArray(res.data.members) ? res.data.members : [];
-    const allMembers: User[] = [];
-    console.log(memberIds);
 
+    console.log(res,props.groupId);
+
+    const memberIds: string[] = Array.isArray(res.data.members) ? res.data.members : []
+    const allMembers: Member[] = []
+
+    // fetch user info for each member ID
     for (const userId of memberIds) {
-      const userObjRes = await axios.post('http://localhost:8000/api/Authentication/_getUserById', {
-        user:userId,
-      });
-      console.log(userObjRes);
-      if (userObjRes.data) allMembers.push(userObjRes.data.userInfo);
+      try {
+        const userObjRes = await axios.post('http://localhost:8000/api/Authentication/_getUserById', {
+          user: userId,
+        })
+        if (userObjRes.data?.userInfo) {
+          allMembers.push(userObjRes.data.userInfo)
+        }
+      } catch (err) {
+        console.error(`Failed to load user ${userId}`, err)
+      }
     }
 
-    members.value = allMembers;
-
+    members.value = allMembers
+    console.log('Loaded members:', allMembers)
   } catch (err) {
     console.error('Error loading members', err)
   }
 }
+
+// -------------------- LOAD EXPENSE --------------------
+const loadExpense = async () => {
+  try {
+    const res = await axios.post('http://localhost:8000/api/Expense/_getExpenseById', {
+      expenseId: props.expenseId
+    })
+    const data = res.data
+
+    title.value = data.title
+    description.value = data.description
+    category.value = data.category
+    date.value = new Date(data.date).toISOString().slice(0, 10)
+    totalCost.value = data.totalCost
+    payer.value = data.payer._id || data.payer
+
+    // load splits
+    const splitsRes = await axios.post('http://localhost:8000/api/Expense/_getSplitsByExpense', {
+      expenseId: props.expenseId
+    })
+    userSplits.value = Array.isArray(splitsRes.data.splits)
+      ? splitsRes.data.splits.map((s: any) => ({
+          userId: s.user._id || s.user,
+          amount: s.amountOwed
+        }))
+      : []
+  } catch (err) {
+    console.error('Error loading expense', err)
+  }
+}
+
+// -------------------- ACTIONS --------------------
+onMounted(async () => {
+  await loadMembers()
+  await loadExpense()
+})
 
 const availableMembersForSplit = (currentUserId: string) => {
   const selectedIds = userSplits.value
@@ -64,114 +114,72 @@ const availableMembersForSplit = (currentUserId: string) => {
 };
 
 
-onMounted(() => {
-  loadMembers()
-})
+const addSplit = () => userSplits.value.push({ userId: '', amount: null })
+const removeSplit = (index: number) => userSplits.value.splice(index, 1)
 
-const addSplit = () => {
-  userSplits.value.push({ userId: '', amount: null })
-}
-
-const removeSplit = (index: number) => {
-  userSplits.value.splice(index, 1)
-}
-
-const createExpense = async () => {
+const updateExpense = async () => {
   if (!title.value || !category.value || !totalCost.value || !payer.value) {
     errorMsg.value = 'All fields are required'
     return
   }
 
-  // 🧮 Validate split amounts
-  const sumOfSplits = userSplits.value.reduce((acc, split) => acc + (split.amount || 0), 0)
+  const sumOfSplits = userSplits.value.reduce((acc, s) => acc + (s.amount || 0), 0)
   if (sumOfSplits !== totalCost.value) {
     errorMsg.value = `Total of splits (${sumOfSplits}) must equal total cost (${totalCost.value})`
     return
   }
 
-  // 1️⃣ Create a blank expense first
-  let expenseId: string
   try {
-    const res = await axios.post('http://localhost:8000/api/Expense/createExpense', {
-      user: payer.value,
-      group: props.groupId,
+    // remove old splits
+    const oldSplitsRes = await axios.post('http://localhost:8000/api/Expense/_getSplitsByExpense', {
+      expenseId: props.expenseId
     })
-    if (res.data.error) {
-      errorMsg.value = res.data.error
-      return
+    for (const split of oldSplitsRes.data.splits) {
+      await axios.post('http://localhost:8000/api/Expense/removeUserSplit', {
+        expense: props.expenseId,
+        userSplit: split._id
+      })
     }
-    expenseId = res.data.expense
-  } catch (err) {
-    console.error('Error creating expense', err)
-    return
-  }
+    console.log(oldSplitsRes);
 
-    // 🧹 Remove old splits
-  const oldSplits = await axios.post('http://localhost:8000/api/Expense/_getSplitsByExpense', {
-    expenseId: expenseId
-  })
-  console.log("hi",oldSplits)
-  for (const split of oldSplits.data.splits) {
-    await axios.post('http://localhost:8000/api/Expense/removeUserSplit', {
-      expenseId: expenseId,
-      userSplit: split._id
-    })
-  }
-
-  // 3️⃣ Add new splits
-  for (const split of userSplits.value) {
-    if (!split.userId || split.amount === null) continue
-    try {
-      const res = await axios.post('http://localhost:8000/api/Expense/addUserSplit', {
-        expense: expenseId,
+    // add new splits
+    for (const split of userSplits.value) {
+      if (!split.userId || split.amount === null) continue
+      await axios.post('http://localhost:8000/api/Expense/addUserSplit', {
+        expense: props.expenseId,
         user: split.userId,
         amountOwed: split.amount,
       })
-      if (res.data.error) {
-        console.error('Error adding split', res.data.error)
-      }
-    } catch (err) {
-      console.error('Error adding split', err)
     }
-  }
 
-
-  // 2️⃣ Edit expense with actual details
-  try {
+    // update expense
     const res = await axios.post('http://localhost:8000/api/Expense/editExpense', {
-      expenseToEdit: expenseId,
+      expenseToEdit: props.expenseId,
       title: title.value,
       description: description.value,
       category: category.value,
       totalCost: totalCost.value,
       date: new Date(date.value),
       payer: payer.value,
-
     })
+
     if (res.data.error) {
       errorMsg.value = res.data.error
       return
     }
+
+    emit('refresh')
+    emit('close')
   } catch (err) {
-    const deleteRes = await axios.post('http://localhost:8000/api/Expense/deleteExpense', {
-      expenseId:expenseId
-    })
-
-    console.error('Error editing expense', err)
-    return
+    console.error('Error updating expense', err)
   }
-
-
-  emit('refresh')
-  emit('close')
 }
-
 </script>
 
 <template>
   <div class="modal-overlay">
     <div class="modal">
-      <h3>Create Expense</h3>
+      <h3>Edit Expense</h3>
 
       <input v-model="title" placeholder="Title" />
       <input v-model="description" placeholder="Description" />
@@ -179,6 +187,7 @@ const createExpense = async () => {
       <input type="date" v-model="date" />
       <input v-model.number="totalCost" type="number" placeholder="Total Cost" />
 
+      <!-- Payer Dropdown -->
       <select v-model="payer">
         <option value="">Select Payer</option>
         <option v-for="m in members" :key="m._id" :value="m._id">
@@ -188,7 +197,7 @@ const createExpense = async () => {
 
       <h4>User Splits</h4>
       <div v-for="(split, index) in userSplits" :key="index" class="split-row">
-<select v-model="split.userId">
+        <select v-model="split.userId">
   <option value="">Select User</option>
   <option
     v-for="m in availableMembersForSplit(split.userId)"
@@ -198,20 +207,17 @@ const createExpense = async () => {
     {{ m.displayName }}
   </option>
 </select>
-        <input
-          type="number"
-          v-model.number="split.amount"
-          placeholder="Amount owed"
-        />
+
+        <input type="number" v-model.number="split.amount" placeholder="Amount owed" />
         <button @click="removeSplit(index)">Remove</button>
       </div>
 
       <button @click="addSplit">+ Add User Split</button>
 
-      <p class="error" v-if="errorMsg">{{ errorMsg }}</p>
+      <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
 
       <div class="modal-buttons">
-        <button @click="createExpense">Create</button>
+        <button @click="updateExpense">Save</button>
         <button @click="emit('close')">Cancel</button>
       </div>
     </div>

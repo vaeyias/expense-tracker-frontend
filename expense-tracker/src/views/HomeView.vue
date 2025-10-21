@@ -73,23 +73,19 @@ const loadFolders = async (folderId: string | null = null) => {
 
     }
 
-    console.log(groupRes.data);
     const groupIds: string[] = Array.isArray(groupRes.data) ? groupRes.data : [];
-    console.log("hi",groupIds);
     const fullGroups: Group[] = [];
 
     for (const groupId of groupIds) {
       const groupObjRes = await axios.post('http://localhost:8000/api/Group/_getGroup', {
         group:groupId,
       });
-      console.log(groupId,groupObjRes.data,groupObjRes.error);
       if (groupObjRes.data) fullGroups.push(groupObjRes.data);
     }
 
 
     groups.value=fullGroups || [];
 
-    console.log("helllo",groups.value);
 
 
   } catch (err) {

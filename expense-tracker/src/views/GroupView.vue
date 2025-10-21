@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
-import GroupUsersModal from './GroupUsersModal.vue';
-import CreateExpenseModal from './CreateExpenseModal.vue';
 import { useRouter } from 'vue-router';
-const router = useRouter();
+import GroupMembers from '../components/GroupMembers.vue';
+import CreateExpense from '../components/CreateExpense.vue';
+import EditExpense from '../components/EditExpense.vue';
 
+const router = useRouter();
 
 interface Group {
   _id: string;
@@ -28,7 +29,7 @@ const props = defineProps<{ groupId: string }>();
 const group = ref<Group | null>(null);
 const expenses = ref<Expense[]>([]);
 const showUsersModal = ref(false);
-const showCreateExpenseModal = ref(false);
+const showCreateExpense = ref(false);
 
 const loadGroup = async () => {
   try {
@@ -48,9 +49,14 @@ const loadExpenses = async () => {
   }
 };
 
+const showEditExpense = ref(false)
+const editingExpenseId = ref<string | null>(null)
+
 const handleEditExpense = (expenseId: string) => {
-  // open edit expense modal (can reuse CreateExpenseModal with prefilled data)
-};
+  editingExpenseId.value = expenseId
+  showEditExpense.value = true
+}
+
 
 onMounted(async () => {
   await loadGroup();
@@ -62,7 +68,7 @@ onMounted(async () => {
   <div class="group-view">
     <h2>{{ group?.name }}</h2>
     <button @click="showUsersModal = true">View / Manage Users</button>
-    <button @click="showCreateExpenseModal = true">Create Expense</button>
+    <button @click="showCreateExpense = true">Create Expense</button>
 
     <div class="expenses-list">
       <div class="expense-card" v-for="expense in expenses" :key="expense._id">
@@ -74,36 +80,35 @@ onMounted(async () => {
       </div>
     </div>
 
-    <GroupUsersModal
+    <GroupMembers
       v-if="showUsersModal"
       :groupId="props.groupId"
       @close="showUsersModal = false"
     />
 
-    <CreateExpenseModal
-      v-if="showCreateExpenseModal"
+    <CreateExpense
+      v-if="showCreateExpense"
       :groupId="props.groupId"
-      @close="showCreateExpenseModal = false"
+      @close="showCreateExpense = false"
       @refresh="loadExpenses"
     />
+<EditExpense
+  v-if="showEditExpense && editingExpenseId"
+  :groupId="props.groupId"
+  :expenseId="editingExpenseId"
+  @close="showEditExpense = false"
+  @refresh="loadExpenses"
+/>
+
   </div>
 </template>
 
 <style scoped>
 .group-view {
-  padding: 2rem;
-}
+    padding: 2rem;
+    color:black;
 
-.expenses-list {
-  margin-top: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
 }
-
-.expense-card {
-  border: 1px solid #ccc;
-  padding: 1rem;
-  border-radius: 0.5rem;
-}
+.expenses-list { margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+.expense-card { border: 1px solid #ccc; padding: 1rem; border-radius: 0.5rem; }
 </style>

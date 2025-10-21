@@ -77,6 +77,7 @@ const createAccount = async () => {
   flex-direction: column;
   gap: 1rem;
   text-align: center;
+  color:black
 }
 
 input {
