@@ -1,6 +1,6 @@
 <template>
   <div class="group-card" @click="$emit('click')">
-<img src="../assets/groupIcon.png" alt="groupIcon" width="80" height="80">
+    <div class="colored-icon"></div>
     <h3>{{ name }}</h3>
     <p>{{ description }}</p>
   </div>
@@ -20,9 +20,22 @@ const props = defineProps<{
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
   cursor: pointer;
   margin: 1rem;
+}
+
+.colored-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(150deg, var(--brand-mid), var(--brand-vivid));
+  -webkit-mask-image: url('../assets/groupIcon.png');
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  -webkit-mask-position: center;
+  mask-image: url('../assets/groupIcon.png');
+  mask-repeat: no-repeat;
+  mask-size: contain;
+  mask-position: center;
 }
 
 .group-card h3 {

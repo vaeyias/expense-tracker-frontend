@@ -1,35 +1,61 @@
 @import './base.css';
 
+/* App-level wrapper */
 #app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  font-weight: normal;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
+/* Header / main content layout */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(6px);
+  background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.3));
+  border-bottom: 1px solid rgba(8,72,107,0.04);
 }
 
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
+/* Page container spacing */
+.page {
+  width:100%;
+  padding: 28px 18px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
 }
 
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
+.page .content {
+  width: 100%;
+  max-width: var(--max-width);
+}
 
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
+/* Nice small card used in many views */
+.panel {
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-soft);
+  border: 1px solid rgba(12,34,50,0.03);
+}
+
+/* small form footer */
+.form-footer {
+  display:flex;
+  gap:12px;
+  justify-content:flex-end;
+  margin-top: 12px;
+}
+
+/* Link style for nav / chips */
+.chip {
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 10px;
+  border-radius:999px;
+  background: linear-gradient(90deg, rgba(119,94,190,0.06), rgba(8,72,107,0.03));
+  color: var(--brand-deep);
+  font-weight:600;
 }

@@ -1,11 +1,39 @@
 <template>
-  <div class="create-account-container">
-    <h1>Create Account</h1>
-    <input v-model="username" placeholder="Username" />
-    <input v-model="displayName" placeholder="Display Name" />
-    <input v-model="password" type="password" placeholder="Password" />
-    <p class="error" v-if="errorMsg">{{ errorMsg }}</p>
-    <button @click="createAccount">Create</button>
+  <div class="page">
+    <div class="content">
+      <div class="panel card" style="max-width:520px;margin:32px auto;">
+        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div>
+            <div class="h1">Create Account</div>
+            <div style="color:var(--muted);font-size:0.95rem">Join and start tracking your expenses</div>
+          </div>
+        </div>
+
+        <div class="form" style="margin-top:18px; display:grid; gap:12px;">
+          <div class="form-row">
+            <label class="h2" for="username">Username</label>
+            <input id="username" class="input" v-model="username" placeholder="username (used to login)"/>
+          </div>
+
+          <div class="form-row">
+            <label class="h2" for="displayName">Display name</label>
+            <input id="displayName" class="input" v-model="displayName" placeholder="How your name displays"/>
+          </div>
+
+          <div class="form-row">
+            <label class="h2" for="password">Password</label>
+            <input id="password" class="input" type="password" v-model="password" placeholder="Choose a secure password"/>
+          </div>
+
+          <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
+
+          <div class="form-footer">
+            <button class="btn ghost" @click="$router.push('/login')">Back to login</button>
+            <button class="btn" @click="createAccount">Create account</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -36,7 +64,7 @@ const createAccount = async () => {
       password: password.value,
     });
 
-    if (res.data.error) {
+    if (res.data?.error) {
       errorMsg.value = res.data.error;
       return;
     }
@@ -47,7 +75,7 @@ const createAccount = async () => {
       parent: ".parent_root",
     });
 
-    if (folderRes.data.error) {
+    if (folderRes.data?.error) {
       errorMsg.value = folderRes.data.error;
       return;
     }
@@ -59,7 +87,6 @@ const createAccount = async () => {
     };
     userStore.setUser(userInfo);
     localStorage.setItem('currentUser', JSON.stringify(userInfo));
-
     router.push('/');
   } catch (err) {
     errorMsg.value = 'Account creation failed. Please try again.';
@@ -69,28 +96,8 @@ const createAccount = async () => {
 </script>
 
 <style scoped>
-.create-account-container {
-  max-width: 400px;
-  margin: 100px auto;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  text-align: center;
-  color:black
-}
-
-input {
-  display: block;
-  margin: 5px auto;
-  padding: 8px;
-  width: 80%;
-}
-
-button {
-  padding: 8px 12px;
-}
-
-.error {
-  color: red;
+/* small extra spacing for mobile */
+@media (max-width:700px){
+  .panel { padding: 18px; margin: 18px 12px; border-radius: 12px; }
 }
 </style>

@@ -1,8 +1,11 @@
+//// filepath: c:\Users\vypha\OneDrive\Documents\fall_2025\6104\expense-tracker-frontend\expense-tracker\src\App.vue
 <template>
-  <body>
+  <div class="app-root">
     <NavBar />
-    <router-view />
-  </body>
+    <main class="view-container">
+      <router-view />
+    </main>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -10,19 +13,25 @@ import NavBar from './components/NavBar.vue';
 </script>
 
 <style>
-body {
-  position:fixed;
+/* Allow the app to scroll naturally and let views control their own overflow. */
+.app-root {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  width:100vw;
-  top:0;
-  left:0;
-  background-color:white;
-  z-index: 888;
-
+  min-height: 100vh;
+  width: 100%;
+  background-color: var(--bg, #ffffff);
 }
-router-view {
+
+/* The central view area grows and scrolls when content overflows */
+.view-container {
   flex: 1;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* optional small reset for router-view children */
+.view-container > * {
+  min-height: 100%;
+  box-sizing: border-box;
 }
 </style>
