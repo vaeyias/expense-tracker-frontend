@@ -72,7 +72,7 @@ function goProfile() {
 
 .container {
   max-width: 100%;
-  padding: 4px 12px; /* adds a bit of horizontal breathing room */
+  padding: 5px 15px; /* adds a bit of horizontal breathing room */
   min-height: 52px; /* controls total height */
 }
 

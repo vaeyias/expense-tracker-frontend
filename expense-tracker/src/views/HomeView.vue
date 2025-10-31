@@ -171,7 +171,8 @@ const goToParent = async () => {
 };
 
 const createFolder = async () => {
-  if (!newFolderName.value) {
+  newFolderName.value = newFolderName.value.trim();
+  if (!newFolderName.value.trim()) {
     errorMsg.value = 'Folder name cannot be empty.';
     return;
   }
@@ -452,34 +453,39 @@ const moveGroupConfirm = async () => {
       targetFolderName = targetFolder.name;
     }
 
+      // remove from source folder (if we have a current folder id) else root
+    const rootFolderRes = await axios.post('http://localhost:8000/api/Folder/_getRootId', {
+        user: currentUser._id,
+      });
+
+    if (!currentFolder.value){
+      console.log("rootres",rootFolderRes);
+      // source is root
+      await axios.post('http://localhost:8000/api/Folder/removeGroupFromFolder', {
+        user: currentUser?._id,
+        folder: rootFolderRes.data[0]._id,
+        group: groupToMoveForModal.value._id,
+      });
+    } else{
+      // source is current folder
+      console.log("current",currentFolder.value._id);
+      await axios.post('http://localhost:8000/api/Folder/removeGroupFromFolder', {
+        user: currentUser?._id,
+        folder: currentFolder.value._id,
+        group: groupToMoveForModal.value._id,
+      });
+    }
+
+
 
     // add to target folder
-    const addRes = await axios.post('http://localhost:8000/api/Folder/addGroupToFolder', {
+    await axios.post('http://localhost:8000/api/Folder/addGroupToFolder', {
       user: currentUser?._id,
       folderName: targetFolderName,
       group: groupToMoveForModal.value._id,
     });
-    if (addRes.data?.error) {
-      alert(addRes.data.error);
-      return;
-    }
 
-    // remove from source folder (if we have a current folder id) else root
-    const rootFolderRes = await axios.post('http://localhost:8000/api/Folder/_getRootFolder', {
-        user: currentUser._id,
-      });
 
-    const sourceFolderId = currentFolder.value?._id || rootFolderRes.data[0]._id;
-        console.log(targetFolderName, groupToMoveForModal.value._id,currentFolder.value,rootFolderRes.data[0]._id,sourceFolderId);
-
-    const removeRes = await axios.post('http://localhost:8000/api/Folder/removeGroupFromFolder', {
-      user: currentUser?._id,
-      folder: sourceFolderId,
-      group: groupToMoveForModal.value._id,
-    });
-    if (removeRes.data?.error) {
-      console.warn('Warning while removing group from source:', removeRes.data.error);
-    }
 
     // Refresh
     showMoveGroupModal.value = false;
@@ -663,7 +669,8 @@ onBeforeUnmount(() => {
         <div class="modal panel" style="max-width:420px;">
           <h3 class="h2">Create Folder</h3>
           <input class="input" v-model="newFolderName" placeholder="Folder Name" />
-          <p v-if="errorMsg" class="error">A folder with this name already exists.</p>
+          <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
+
           <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
             <button class="btn cancel" @click="showFolderModal = false">Cancel</button>
             <button class="btn" @click="createFolder">Create</button>
