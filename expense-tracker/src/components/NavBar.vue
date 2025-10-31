@@ -1,17 +1,27 @@
+
+
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useUserStore } from '../stores/user';
 
+const router = useRouter();
 const userStore = useUserStore();
+
 const displayName = computed(() => userStore.currentUser?.displayName || '');
 const username = computed(() => userStore.currentUser?.username || '');
 
-// helper to check active route for underline persistence
 const route = useRoute();
 function isActive(path: string) {
-  // exact match; adapt if you want prefix matching (startsWith)
   return route.path === path;
+}
+
+// 🧭 navigation helpers
+function goHome() {
+  router.push('/');
+}
+function goProfile() {
+  router.push('/profile');
 }
 </script>
 
@@ -19,141 +29,137 @@ function isActive(path: string) {
   <header class="app-header">
     <div class="container" style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
       <!-- Left: logo + title + user names -->
-      <div class="left row" style="align-items:center; gap:12px;">
-        <div class="logo center" aria-hidden>
-          <div class="logo-badge">ET</div>
-        </div>
+      <div class="left row" style="align-items:center; gap:10px;">
+  <div class="logo center" aria-hidden @click="goHome" style="cursor:pointer;">
+    <img
+      src="../assets/fish6_purple.png"
+      alt="Moni logo"
+      style="width:80px; object-fit:contain; margin:0;"
+    />
+  </div>
 
-        <div class="title-block">
-          <div class="app-title">Moni</div>
-        </div>
+  <div class="title-block">
+    <div class="app-title">Moni</div>
+  </div>
 
-        <!-- user names shown after title (keeps everything left grouped) -->
-        <div v-if="displayName || username" class="user-names">
-          <div class="display-name" v-if="displayName">{{ displayName }}</div>
-          <div class="username" v-if="username">@{{ username }}</div>
-        </div>
-      </div>
+  <div
+    v-if="displayName || username"
+    class="user-names"
+    @click="goProfile"
+    style="cursor:pointer;"
+  >
+    <div class="display-name" v-if="displayName">{{ displayName }}</div>
+    <div class="username" v-if="username">@{{ username }}</div>
+  </div>
+</div>
 
-      <!-- Right: nav links (kept at the right end) -->
-<nav class="right-nav" aria-label="Main navigation">
-  <a class="nav-link" :class="{ active: isActive('/') }" href="/">Home</a>
-  <a class="nav-link" :class="{ active: isActive('/debts') }" href="/debts">Debts</a>
-  <a class="nav-link" :class="{ active: isActive('/profile') }" href="/profile">Profile</a>
-</nav>    </div>
+
+      <!-- Right: nav links -->
+      <nav class="right-nav" aria-label="Main navigation">
+        <a class="nav-link" :class="{ active: isActive('/') }" href="/">Home</a>
+        <a class="nav-link" :class="{ active: isActive('/debts') }" href="/debts">Debts</a>
+        <a class="nav-link" :class="{ active: isActive('/profile') }" href="/profile">Profile</a>
+      </nav>
+    </div>
   </header>
 </template>
 
-// ...existing code...
 <style scoped>
 .app-header {
-  padding: 5px 0;
   background: linear-gradient(20deg, var(--brand-deep), var(--card));
+  padding: 10px 0; /* thinner top/bottom padding */
 }
+
 .container {
   max-width: 100%;
+  padding: 4px 12px; /* adds a bit of horizontal breathing room */
+  min-height: 52px; /* controls total height */
 }
-.logo-badge {
-  width:44px;
-  height:44px;
-  border-radius:10px;
-  background: linear-gradient(135deg, var(--brand-mid), var(--brand-deep));
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  color:var(--brand-light);
-  font-weight:700;
-  font-size:1rem;
-  box-shadow: var(--shadow-tight);
-}
+
 .title-block .app-title {
-  font-weight:800;
-  color:var(--brand-highlight);
-  stroke-width: 1%;
-  line-height:1;
-  font-size:1.5rem;
+  font-weight: 800;
+  color: var(--brand-highlight);
+  line-height: 1;
+  font-size: 1.5rem; /* slightly smaller title */
+  margin-left: 0;
+  text-align: left; /* 👈 aligns text to the left */
 }
+
+
 .title-block .app-sub {
-  font-size:0.82rem;
-  color:var(--brand-light);
-  margin-top:2px;
+  font-size: 1rem;
+  color: var(--brand-light);
+  margin-top: 2px;
 }
+
 /* user names styling */
 .user-names {
-  margin-left: 12px;
-  display:flex;
-  flex-direction:column;
-  gap:2px;
-  align-items:flex-start;
-  color:var(--brand-light)
-;
+  margin-left: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  align-items: flex-start;
+  color: var(--brand-light);
+
 }
 .user-names .display-name {
-  font-weight:600;
-  font-size:0.97rem;
+  font-weight: 600;
+  font-size: 1.2rem;
 }
 .user-names .username {
-  font-size:0.97rem;
-  color:var(--muted);
-  font-weight:500;
+  font-size: 1rem;
+  color: var(--muted);
+  font-weight: 500;
 }
+
 /* nav links aligned to the far right */
 .right-nav {
-  display:flex;
-  gap:12px;
-  align-items:flex-end;
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
+
 .nav-link {
-  position: relative; /* needed for pseudo-element */
-  padding: 8px 12px;
-  border-radius: 10px;
+  position: relative;
+  padding: 6px 10px;
+  border-radius: 8px;
   color: var(--brand-light);
   text-decoration: none;
   font-weight: 600;
-  transition: transform .12s ease, background .12s ease, color .12s ease;
   font-size: 1.2rem;
-  overflow: visible;
 }
 
-/* animated underline using --brand-vivid */
+/* underline animation */
 .nav-link::after {
   content: "";
   position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: 6px;
-  height: 3px;
-  background: linear-gradient(90deg, var(--brand-vivid), var(--brand-vivid));
+  left: 10px;
+  right: 10px;
+  bottom: 4px;
+  height: 2px;
+  background: var(--brand-vivid);
   border-radius: 2px;
   transform: scaleX(0);
   transform-origin: left center;
-  transition: transform .18s cubic-bezier(.2,.8,.2,1), opacity .12s ease;
+  transition: transform 0.18s cubic-bezier(.2, .8, .2, 1), opacity 0.12s ease;
   opacity: 0;
   pointer-events: none;
 }
 
-/* show underline on hover / focus */
 .nav-link:hover::after,
-.nav-link:focus::after {
-  transform: scaleX(1);
-  opacity: 1;
-}
-
-/* if you mark a nav item as active (add .active), keep underline visible */
+.nav-link:focus::after,
 .nav-link.active::after {
   transform: scaleX(1);
   opacity: 1;
 }
 
 .nav-link:hover {
-  transform: translateY(-2px);
-  /* background: linear-gradient(20deg, var(--brand-vivid), var(--brand-deep)); */
-  width: 100%; /* preserves existing behavior */
+  transform: translateY(-1px);
 }
 
-/* responsive: collapse nav links on small screens */
+/* responsive */
 @media (max-width: 700px) {
   .right-nav { display: none; }
-  .user-names { display: none; } /* optional: hide user names on very small screens */
+  .user-names { display: none; }
 }
 </style>

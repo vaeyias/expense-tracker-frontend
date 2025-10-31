@@ -11,7 +11,7 @@ import { defineProps } from 'vue';
 
 const props = defineProps<{
   name: string;
-  description: string;
+  description: string | null;
 }>();
 </script>
 
@@ -46,6 +46,6 @@ const props = defineProps<{
 .group-card p {
   margin: 0;
   font-size: 0.85rem;
-  color: #555;
+  color: var(--muted);
 }
 </style>

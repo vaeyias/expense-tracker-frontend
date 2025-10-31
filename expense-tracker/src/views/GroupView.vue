@@ -43,8 +43,40 @@ const editingExpenseId = ref<string | null>(null)
 const showExpenseModal = ref(false);
 const selectedExpense = ref<Expense | null>(null);
 
-function openExpenseModal(expense: Expense) {
+const userSplits = ref<{ userId: string; displayName: string; amount: number }[]>([]);
+
+async function openExpenseModal(expense: Expense) {
   selectedExpense.value = expense;
+
+  const splitsRes = await axios.post('http://localhost:8000/api/Expense/_getSplitsByExpense', {
+  expenseId: expense._id
+});
+const splits = Array.isArray(splitsRes.data.splits) ? splitsRes.data.splits : [];
+
+const enrichedSplits = await Promise.all(
+  splits.map(async (s: any) => {
+    try {
+      const userRes = await axios.post('http://localhost:8000/api/Authentication/_getUserById', {
+        user: s.user?._id || s.user
+      });
+      const displayName = userRes.data?.userInfo?.displayName || 'Unknown';
+      return {
+        userId: s.user?._id || s.user,
+        displayName,
+        amount: s.amountOwed
+      };
+    } catch {
+      return {
+        userId: s.user?._id || s.user,
+        displayName: 'Unknown',
+        amount: s.amountOwed
+      };
+    }
+  })
+);
+
+userSplits.value = enrichedSplits;
+
   showExpenseModal.value = true;
 }
 
@@ -146,7 +178,7 @@ onMounted(async () => {
   <span class="expense-description">{{ expense.description || '-' }}</span>
   <span class="expense-payer">{{ expense.payer.displayName }}</span>
   <span class="expense-total">${{ expense.totalCost.toFixed(2) }}</span>
-  <span class="expense-youOwe" :class="{ 'danger': expense.youOwe > 0 }">${{ (expense.youOwe || 0).toFixed(2) }}</span>
+  <span class="expense-youOwe" :class="{ 'danger': expense?.youOwe > 0 }">${{ (expense.youOwe || 0).toFixed(2) }}</span>
 </div>
 
 
@@ -194,7 +226,7 @@ onMounted(async () => {
         <div class="amount-label">Total</div>
         <div class="amount-value">${{ selectedExpense ? selectedExpense.totalCost.toFixed(2) : '0.00' }}</div>
         <div class="you-owe" :class="{ 'highlight': (selectedExpense?.youOwe || 0) > 0 }">
-          You owe <strong>${{ selectedExpense ? (selectedExpense.youOwe || 0).toFixed(2) : '0.00' }}</strong>
+          Your share: <strong>${{ selectedExpense ? (selectedExpense.youOwe || 0).toFixed(2) : '0.00' }}</strong>
         </div>
       </div>
     </header>
@@ -214,11 +246,23 @@ onMounted(async () => {
         <div class="label">Description</div>
         <div class="value muted description">{{ selectedExpense?.description || '-' }}</div>
       </div>
+
+      <div class="field full">
+        <div class="label">Splits</div>
+  <div class="value muted description">
+<div class="splits-list">
+  <div v-for="split in userSplits" :key="split.userId" class="split-row">
+    <span class="split-name">{{ split.displayName }}: </span>
+    <span class="split-amount">${{ split.amount.toFixed(2) }}</span>
+  </div>
+</div>
+</div>
+      </div>
     </main>
 
     <footer class="modal-footer">
       <div class="footer-actions">
-        <button class="btn ghost" @click="closeExpenseModal">Close</button>
+        <button class="btn cancel" @click="closeExpenseModal">Close</button>
         <button class="btn" @click="() => { if (selectedExpense) handleEditExpense(selectedExpense._id); closeExpenseModal(); }">Edit</button>
       </div>
     </footer>
@@ -338,7 +382,7 @@ onMounted(async () => {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: linear-gradient(180deg, rgba(6,12,18,0.55), rgba(6,12,18,0.65));
+  background: linear-gradient(180deg, rgba(6,12,18,0.2), var(--brand-deep));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -352,7 +396,7 @@ onMounted(async () => {
   max-width: 880px;
   border-radius: 14px;
   padding: 18px;
-  background: linear-gradient(120deg, var(--brand-mid), var(--brand-deep));
+  background: var(--card);
   box-shadow: 0 22px 56px rgba(2,6,23,0.6);
   color: var(--brand-light);
   animation: modal-pop .14s cubic-bezier(.2,.9,.3,1);
@@ -390,20 +434,20 @@ onMounted(async () => {
 .modal-ident { display:flex; flex-direction:column; gap:6px; }
 .modal-title {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   color: var(--brand-highlight);
   font-weight: 800;
 }
-.modal-sub { font-size:0.9rem; color: var(--muted); }
+.modal-sub { font-size:rem; color: var(--muted); }
 
 /* small meta pills */
 .meta-row { display:flex; gap:8px; margin-top:6px; flex-wrap:wrap; }
 .meta-pill {
-  background: rgba(255,255,255,0.03);
+  background: rgba(0,0,0,0.1);
   color: var(--brand-light);
-  padding: 6px 8px;
+  padding: 10px;
   border-radius: 999px;
-  font-size: 0.82rem;
+  font-size: 1rem;
   border: 1px solid rgba(255,255,255,0.02);
 }
 
@@ -416,7 +460,7 @@ onMounted(async () => {
   gap:6px;
   padding: 10px;
   border-radius: 10px;
-  background: linear-gradient(135deg, rgba(var(--brand-vivid-rgb, 146,49,126),0.15), rgba(var(--brand-deep-rgb, 8,72,107),0.08));
+  background: rgba(0,0,0,0.05);
   border: 1px solid rgba(255,255,255,0.04);
   text-align:center;
 }
@@ -434,16 +478,17 @@ onMounted(async () => {
 .modal-body {
   display: grid;
   grid-template-columns: 1fr 320px;
-  background-color: var(--brand-deep);
+  background-color: rgba(0,0,0,0.2);
   gap: 14px;
-  padding: 14px 0;
+  padding: 14px;
+  border-radius: 10px;
 }
 .field {
   display:flex;
   flex-direction:column;
   gap:6px;
   padding: 8px;
-  background: rgba(255,255,255,0.01);
+  background: rgba(0,0,0,0.1);
   border-radius: 8px;
   border: 1px solid rgba(255,255,255,0.02);
 }

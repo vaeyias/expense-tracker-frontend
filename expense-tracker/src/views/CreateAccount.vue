@@ -12,17 +12,17 @@
         <div class="form" style="margin-top:18px; display:grid; gap:12px;">
           <div class="form-row">
             <label class="h2" for="username">Username</label>
-            <input id="username" class="input" v-model="username" placeholder="username (used to login)"/>
+            <input maxlength="20" autocomplete="off"id="username" class="input" v-model="username" placeholder="Unique username"/>
           </div>
 
           <div class="form-row">
             <label class="h2" for="displayName">Display name</label>
-            <input id="displayName" class="input" v-model="displayName" placeholder="How your name displays"/>
+            <input autocomplete="off"maxlength="20" id="displayName" class="input" v-model="displayName" placeholder="Display name"/>
           </div>
 
           <div class="form-row">
             <label class="h2" for="password">Password</label>
-            <input id="password" class="input" type="password" v-model="password" placeholder="Choose a secure password"/>
+            <input autocomplet="off" id="password" class="input" type="password" v-model="password" placeholder="Choose a secure password"/>
           </div>
 
           <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
@@ -59,7 +59,7 @@ const createAccount = async () => {
 
   try {
     const res = await axios.post('http://localhost:8000/api/Authentication/createUser', {
-      username: username.value,
+      username: username.value.toLowerCase(),
       displayName: displayName.value,
       password: password.value,
     });

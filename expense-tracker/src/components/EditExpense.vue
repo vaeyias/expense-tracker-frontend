@@ -35,6 +35,9 @@ const busy = ref(false)
 const members = ref<Member[]>([])
 const userSplits = ref<UserSplit[]>([])
 
+const showDeleteConfirm = ref(false)
+
+
 /* Load members */
 const loadMembers = async () => {
   try {
@@ -211,7 +214,6 @@ const updateExpense = async () => {
 
 /* Delete expense (preserve existing) */
 const deleteExpense = async () => {
-  if (!confirm('Are you sure you want to delete this expense?')) return
 
   try {
     const splitsRes = await axios.post('http://localhost:8000/api/Expense/_getSplitsByExpense', {
@@ -252,6 +254,12 @@ const deleteExpense = async () => {
     console.error('Error deleting expense', err)
   }
 }
+
+const confirmDelete = async () => {
+  showDeleteConfirm.value = false
+  await deleteExpense() // call your existing deleteExpense function
+}
+
 </script>
 
 <template>
@@ -261,8 +269,13 @@ const deleteExpense = async () => {
         <div>
           <h3 class="modal-title">Edit Expense</h3>
           <div class="muted small">Edit details and participant splits</div>
+
+
         </div>
+        <button class="btn danger" @click="showDeleteConfirm = true">Delete</button>
       </header>
+              <div class="modal-body">
+
 
       <section class="form-grid">
         <div class="field">
@@ -289,13 +302,13 @@ const deleteExpense = async () => {
           <label class="label">Payer</label>
           <select v-model="payer">
             <option value="">Select payer</option>
-            <option v-for="m in members" :key="m._id" :value="m._id">{{ m.displayName }}</option>
+            <option style="background-color: var(--brand-deep);"   v-for="m in members" :key="m._id" :value="m._id">{{ m.displayName }}</option>
           </select>
         </div>
 
         <div class="field full">
           <label class="label">Description (optional)</label>
-          <textarea v-model="description" rows="3" placeholder="Add notes about this expense"></textarea>
+          <textarea class ="desc" v-model="description" rows="3" placeholder="Add notes about this expense"></textarea>
         </div>
       </section>
 
@@ -303,11 +316,11 @@ const deleteExpense = async () => {
         <div class="splits-head">
           <h4 class="h4">User Splits</h4>
           <div class="splits-tools">
-            <div class="muted small">Sum: <strong :class="{ warn: splitMismatch }">${{ sumOfSplits.toFixed(2) }}</strong></div>
+            <div class="">Sum: <strong :class="{ warn: splitMismatch }">${{ sumOfSplits.toFixed(2) }}</strong></div>
 
             <div class="split-buttons">
-              <button class="btn ghost" @click="splitEqually(true)" title="Split equally among all members">Split equally (all)</button>
-              <button class="btn ghost" @click="splitEqually(false)" title="Split equally among everyone except payer">Split (except payer)</button>
+              <button class="btn cancel" @click="splitEqually(true)" title="Split equally among all members">Split equally (all)</button>
+              <button class="btn cancel" @click="splitEqually(false)" title="Split equally among everyone except payer">Split (except payer)</button>
             </div>
 
             <button class="btn" @click="addSplit">+ Add split</button>
@@ -320,28 +333,46 @@ const deleteExpense = async () => {
           <div v-for="(split, i) in userSplits" :key="i" class="split-row">
             <select v-model="split.userId">
               <option value="">Select user</option>
-              <option v-for="m in availableMembersForSplit(split.userId)" :key="m._id" :value="m._id">{{ m.displayName }}</option>
+              <option style="background-color: var(--brand-deep);" v-for="m in availableMembersForSplit(split.userId)" :key="m._id" :value="m._id">{{ m.displayName }}</option>
             </select>
 
             <input type="number" v-model.number="split.amount" min="0" step="0.01" placeholder="Amount" />
 
-            <button class="btn ghost remove" @click="removeSplit(i)">Remove</button>
+            <button class="btn remove" @click="removeSplit(i)">Remove</button>
           </div>
         </div>
       </section>
 
       <p class="error" v-if="errorMsg">{{ errorMsg }}</p>
+      </div>
 
       <footer class="modal-foot">
-        <div class="foot-left muted small">Ensure splits add up to the total. You can edit amounts before saving.</div>
         <div class="foot-actions">
-          <button class="btn ghost" @click="emit('close')">Cancel</button>
-          <button class="btn delete" @click="deleteExpense">Delete</button>
-          <button class="btn primary" :disabled="busy" @click="updateExpense">{{ busy ? 'Saving...' : 'Save' }}</button>
+          <button class="btn cancel" @click="emit('close')">Cancel</button>
+          <button class="btn" :disabled="busy" @click="updateExpense">{{ busy ? 'Saving...' : 'Save' }}</button>
         </div>
       </footer>
+        <div v-if="showDeleteConfirm" class="modal-overlay" role="dialog" aria-modal="true">
+  <div class="modal-card-confirm">
+    <header class="modal-head">
+      <h3 class="modal-title">Confirm Delete</h3>
+    </header>
+    <div class="modal-body" style="text-align:center;">
+      <p>Are you sure you want to delete this expense?</p>
     </div>
+    <footer class="modal-foot">
+      <div class="foot-actions">
+        <button class="btn cancel" @click="showDeleteConfirm = false">Cancel</button>
+        <button class="btn danger" @click="confirmDelete">Delete</button>
+      </div>
+    </footer>
   </div>
+
+    </div>
+
+  </div>
+</div>
+
 </template>
 
 <style scoped>
@@ -349,7 +380,7 @@ const deleteExpense = async () => {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: linear-gradient(180deg, rgba(6,12,18,0.55), rgba(6,12,18,0.65));
+  background: linear-gradient(180deg, rgba(6,12,18,0.4), rgba(2,6,20,0.9));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -360,7 +391,7 @@ const deleteExpense = async () => {
 .modal-card {
   width: min(920px, 98%);
   max-width: 920px;
-  background: linear-gradient(135deg, var(--brand-mid), var(--brand-vivid));
+  background: var(--card);
   border: 1px solid rgba(255,255,255,0.04);
   backdrop-filter: blur(6px);
   border-radius: 12px;
@@ -371,6 +402,30 @@ const deleteExpense = async () => {
   flex-direction: column;
   gap: 12px;
 }
+.modal-body {
+  background: rgba(0, 0, 0, 0.25); /* translucent black */
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+}
+
+.modal-card-confirm {
+  width: min(400px, 98%);
+  max-width: 400px;
+  background: var(--card);
+  backdrop-filter: blur(6px);
+  border-radius: 12px;
+  padding: 18px;
+  color: var(--brand-light, #eef6ff);
+  box-shadow: 0 18px 40px rgba(4,10,24,0.56);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 
 /* header */
 .modal-head {
@@ -379,17 +434,18 @@ const deleteExpense = async () => {
   align-items: center;
   gap: 12px;
 }
-.modal-title { margin: 0; font-size: 1.25rem; color: var(--brand-highlight); font-weight: 800; }
+.modal-title { margin: 0; font-size: 1.5rem; color: var(--brand-highlight); font-weight: 800; }
 
 /* form grid */
 .form-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
+
 }
-.field { display:flex; flex-direction:column; gap:6px; }
+.field{ display:flex; flex-direction:column; gap:6px; width:90%;}
 .field.wide { grid-column: span 2; }
-.field.full { grid-column: 1 / -1; }
+.field.full { grid-column: 1 / -1;}
 .label { font-size: 0.85rem; color: var(--muted); font-weight:700; }
 
 /* prominent Title & Category inputs */
@@ -409,6 +465,24 @@ const deleteExpense = async () => {
   box-shadow: 0 10px 30px rgba(146,49,126,0.12);
   transform: translateY(-2px);
 }
+
+.btn.remove {
+  background: linear-gradient(120deg, #b04444, var(--brand-vivid));
+  color: var(--brand-light);
+  box-shadow: none;
+}
+
+.desc{
+  padding: 10px 12px;
+  width: 95%;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(0,0,0,0.12);
+  color: var(--brand-light);
+  outline: none;
+  transition: box-shadow .12s ease, border-color .12s ease;
+}
+
 
 /* inputs */
 input[type="number"], input[type="date"], textarea, select {
@@ -468,11 +542,10 @@ select, .split-row select {
   background-repeat: no-repeat;
   padding-right: 40px;
 }
-select option, .split-row select option { color: inherit; background: transparent; }
 
 
 /* footer */
-.modal-foot { display:flex; justify-content:space-between; align-items:center; gap:12px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.02); }
+.modal-foot { display:flex; justify-content:right; align-items:center; gap:12px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.02); }
 .foot-actions { display:flex; gap:8px; align-items:center; }
 
 /* misc */
@@ -481,7 +554,7 @@ select option, .split-row select option { color: inherit; background: transparen
 .small { font-size: 0.85rem; }
 
 /* validation */
-.warn { color: var(--brand-vivid); font-weight: 800; }
+.warn { color: rgb(219, 84, 84); font-weight: 800; }
 .error { color: #ff7b7b; font-weight: 700; }
 
 /* responsive */

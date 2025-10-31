@@ -207,16 +207,18 @@ function clearForm() {
           <div class="muted small">Add a new expense to this group and set participant splits</div>
         </div>
       </header>
+        <div class="modal-body">
+
 
       <section class="form-grid">
         <div class="field">
           <label class="label">Title</label>
-          <input class="title-input" v-model="title" placeholder="Dinner, utilities, gift..." />
+          <input class="title-input" v-model="title" placeholder="..." />
         </div>
 
         <div class="field">
           <label class="label">Category</label>
-          <input class="category-input" v-model="category" placeholder="Category (e.g. Food, Travel)" />
+          <input class="category-input" v-model="category" placeholder="..." />
         </div>
 
         <div class="field">
@@ -226,14 +228,14 @@ function clearForm() {
 
         <div class="field">
           <label class="label">Total Cost</label>
-          <input type="number" v-model.number="totalCost" min="0" step="0.01" placeholder="0.00" />
+          <input style="font-size:1rem; width:90%"type="number" v-model.number="totalCost" min="0" step="0.01" placeholder="0.00" />
         </div>
 
         <div class="field wide">
           <label class="label">Payer</label>
           <select v-model="payer">
             <option value="">Select payer</option>
-            <option style="background-color: var(--brand-deep);"   v-for="m in members" :key="m._id" :value="m._id">{{ m.displayName }}</option>
+            <option style="background-color: var(--brand-deep); font-size:1rem;"   v-for="m in members" :key="m._id" :value="m._id">{{ m.displayName }}</option>
           </select>
         </div>
 
@@ -247,11 +249,11 @@ function clearForm() {
         <div class="splits-head">
           <h4 class="h4">User Splits</h4>
           <div class="splits-tools">
-            <div class="muted small">Sum: <strong :class="{ warn: splitMismatch }">${{ sumOfSplits.toFixed(2) }}</strong></div>
+            <div style="">Sum: <strong :class="{ warn: splitMismatch }">${{ sumOfSplits.toFixed(2) }}</strong></div>
 
             <div class="split-buttons">
-              <button class="btn ghost" @click="splitEqually(true)" title="Split equally among all members">Split equally (all)</button>
-              <button class="btn ghost" @click="splitEqually(false)" title="Split equally among everyone except payer">Split (except payer)</button>
+              <button class="btn cancel" @click="splitEqually(true)" title="Split equally among all members">Split equally (all)</button>
+              <button class="btn cancel" @click="splitEqually(false)" title="Split equally among everyone except payer">Split (except payer)</button>
             </div>
 
             <button class="btn" @click="addSplit">+ Add split</button>
@@ -275,12 +277,11 @@ function clearForm() {
       </section>
 
       <p class="error" v-if="errorMsg">{{ errorMsg }}</p>
-
+        </div>
       <footer class="modal-foot">
-        <div class="foot-left muted small">Ensure splits add up to the total. You can edit amounts before creating.</div>
         <div class="foot-actions">
-          <button class="btn ghost" @click="emit('close')">Cancel</button>
-<button class="btn primary" :disabled="busy" @click="createExpense">
+          <button class="btn cancel" @click="emit('close')">Cancel</button>
+<button class="btn create" :disabled="busy" @click="createExpense">
   {{ busy ? 'Creating...' : 'Create' }}
 </button>        </div>
       </footer>
@@ -289,11 +290,14 @@ function clearForm() {
 </template>
 
 <style scoped>
+
+/* buttons */
+
 /* Overlay & card */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: linear-gradient(180deg, rgba(6,12,18,0.55), rgba(6,12,18,0.65));
+  background: linear-gradient(180deg, rgba(6,12,18,0.4), rgba(2,6,20,0.9));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -305,7 +309,7 @@ function clearForm() {
 .modal-card {
   width: min(920px, 98%);
   max-width: 920px;
-  background: linear-gradient(135deg, var(--brand-deep), var(--brand-vivid));
+  background: var(--card);
   border: 1px solid rgba(255,255,255,0.04);
   backdrop-filter: blur(6px);
   border-radius: 12px;
@@ -316,6 +320,7 @@ function clearForm() {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  font-size: 1rem;
 }
 
 /* header */
@@ -325,7 +330,7 @@ function clearForm() {
   align-items: center;
   gap: 12px;
 }
-.modal-title { margin: 0; font-size: 1.25rem; color: var(--brand-highlight); font-weight: 800; }
+.modal-title { margin: 0; font-size: 1.5rem; color: var(--brand-highlight); font-weight: 800; }
 .modal-actions { display:flex; gap:8px; }
 
 /* form grid */
@@ -334,10 +339,23 @@ function clearForm() {
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
 }
-.field { display:flex; flex-direction:column; gap:6px; }
+.field { display:flex; flex-direction:column; gap:6px; font-size: 1rem;}
 .field.wide { grid-column: span 2; }
 .field.full { grid-column: 1 / -1; }
-.label { font-size: 0.85rem; color: var(--muted); font-weight:700; }
+.label { font-size: 1rem; color: var(--muted); font-weight:700; }
+
+
+
+.btn.ghost.remove.btn {
+  background: linear-gradient(120deg, #b04444, var(--brand-vivid));
+  color: var(--brand-light);
+  box-shadow: none;
+}
+
+.btn.cancel:hover {
+  background: linear-gradient(120deg, #b04444, var(--brand-vivid));
+  color: var(--brand-light);
+}
 
 /* enhance Title and Category inputs */
 .title-input, .category-input {
@@ -357,6 +375,17 @@ function clearForm() {
   transform: translateY(-2px);
 }
 
+.modal-body {
+  background: rgba(0, 0, 0, 0.25); /* translucent black */
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+}
+
+
 /* inputs (others) */
 input[type="number"], input[type="date"], textarea, select {
   padding: 10px 12px;
@@ -367,6 +396,8 @@ input[type="number"], input[type="date"], textarea, select {
   outline: none;
   transition: box-shadow .12s ease, border-color .12s ease;
 }
+
+
 input:focus, textarea:focus, select:focus {
   border-color: var(--brand-vivid);
   box-shadow: 0 8px 24px rgba(146,49,126,0.08);
@@ -381,7 +412,7 @@ input:focus, textarea:focus, select:focus {
 .split-buttons { display:flex; gap:8px; align-items:center; }
 
 /* list rows */
-.splits-list { display:flex; flex-direction:column; gap:8px; margin-top:6px; }
+.splits-list { display:flex; flex-direction:column; gap:8px; margin-top:6px;font-size: 0.9rem; }
 .split-row {
   display:flex;
   gap:8px;
@@ -393,16 +424,17 @@ input:focus, textarea:focus, select:focus {
   border: 1px solid rgba(163, 50, 198, 0.04);
   background: rgba(155, 11, 11, 0.01);
   color: white;
+  font-size: 1rem;
 }
 .split-row select { min-width: 220px;}
 .split-row input { width: 120px; }
 
 
 /* remove button */
-.remove { border: 1px solid rgba(255,255,255,0.04); color: var(--brand-light); }
-
+.remove { border: 1px solid rgba(255,255,255,0.04); background-color:#ff7b7b; color: var(--brand-light); }
+.btn.ghost.remove:hover { background-color: #ff4c4c; }
 /* footer */
-.modal-foot { display:flex; justify-content:space-between; align-items:center; gap:12px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.02); }
+.modal-foot { display:flex; justify-content:right; align-items:center; gap:12px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.02); }
 .foot-actions { display:flex; gap:8px; align-items:center; }
 
 /* buttons (local variants) */
@@ -413,7 +445,7 @@ input:focus, textarea:focus, select:focus {
 .small { font-size: 0.85rem; }
 
 /* validation */
-.warn { color: rgb(172, 15, 15); font-weight: 800; }
+.warn { color: rgb(219, 84, 84); font-weight: 800; }
 .error { color: #ff7b7b; font-weight: 700; }
 
 /* responsive */

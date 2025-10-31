@@ -4,6 +4,8 @@ import axios from 'axios';
 import FolderIcon from '../components/FolderIcon.vue';
 import GroupIcon from '../components/GroupIcon.vue';
 import { useRouter } from 'vue-router';
+import FolderTreeNode from '../components/FolderTreeNode.vue';
+
 const router = useRouter();
 
 interface Folder {
@@ -31,6 +33,11 @@ const currentFolder = ref<Folder | null>(null);
 
 const storedUser = localStorage.getItem('currentUser');
 const currentUser = storedUser ? JSON.parse(storedUser) : null;
+
+/* Delete folder modal state */
+const showDeleteFolderModal = ref(false);
+const folderToDelete = ref<Folder | null>(null);
+
 
 interface Group {
   _id: string;
@@ -108,6 +115,39 @@ const loadFolders = async (folderId: string | null = null) => {
     groups.value = fullGroups || [];
   } catch (err) {
     console.error(err);
+  }
+};
+const openDeleteFolderModal = (folder: Folder) => {
+  folderToDelete.value = folder;
+  showDeleteFolderModal.value = true;
+};
+
+const confirmDeleteFolder = async () => {
+  if (!folderToDelete.value) return;
+
+  try {
+    const res = await axios.post('http://localhost:8000/api/Folder/deleteFolder', {
+      user: currentUser?._id,
+      folder: folderToDelete.value._id,
+    });
+
+    if (res.data.error) {
+      alert(res.data.error);
+      return;
+    }
+
+    const res2 = await axios.post('http://localhost:8000/api/Folder/_getFolderById', {
+      user: currentUser._id,
+      folder: currentFolder.value.parent,
+    });
+    currentFolder.value = res2.data;
+    await loadFolders(currentFolder.value._id);
+
+    showDeleteFolderModal.value = false;
+    folderToDelete.value = null;
+  } catch (err) {
+    console.error(err);
+    alert('Failed to delete folder.');
   }
 };
 
@@ -189,25 +229,6 @@ const renameFolderConfirm = async () => {
   }
 };
 
-const deleteFolder = async (folder: Folder) => {
-  if (!confirm(`Are you sure you want to delete "${folder.name}"?`)) return;
-
-  try {
-    const res = await axios.post('http://localhost:8000/api/Folder/deleteFolder', {
-      user: currentUser?._id,
-      folder: folder._id,
-    });
-    if (res.data.error) {
-      alert(res.data.error);
-      return;
-    }
-    await loadFolders(currentFolder.value?.parent || null);
-    currentFolder.value = currentFolder.value?.parent ? { _id: currentFolder.value.parent, name: 'Parent', parent: null } : null;
-  } catch (err) {
-    console.error(err);
-    alert('Failed to delete folder.');
-  }
-};
 
 const handleGroupClick = (group: Group) => {
   try {
@@ -273,7 +294,6 @@ const createGroupConfirm = async () => {
 
 /* ---------- Folder tree helpers ---------- */
 
-// --- replace existing loadRootTree function with this ---
 const loadRootTree = async () => {
   if (!currentUser) return;
   try {
@@ -310,7 +330,9 @@ const loadRootTree = async () => {
   } catch (err) {
     console.error('Failed to load root folders', err);
   }
-};const loadChildrenForNode = async (node: FolderNode) => {
+};
+
+const loadChildrenForNode = async (node: FolderNode) => {
   if (!currentUser || !node) return;
   if (node.loaded) {
     node.expanded = !node.expanded;
@@ -409,29 +431,33 @@ const openMoveGroupModal = async (group: Group) => {
  */
 const moveGroupConfirm = async () => {
   if (!groupToMoveForModal.value) return;
-  if (!moveGroupTargetId.value) {
-    alert('Please pick a target folder');
-    return;
-  }
+
   try {
-    // find target folder by id (for folderName)
-    // call API to get folder name by id
-    const folderRes = await axios.post('http://localhost:8000/api/Folder/_getFolderById', {
-      user: currentUser?._id,
-      folder: moveGroupTargetId.value,
-    });
-    if (folderRes.data?.error) {
-      alert(folderRes.data.error || 'Invalid target folder');
-      return;
+    let targetFolderName: string;
+
+    // If target is null, treat as root
+    if (!moveGroupTargetId.value) {
+      targetFolderName = ".root";
+    } else {
+      // find target folder by id (for folderName)
+      const folderRes = await axios.post('http://localhost:8000/api/Folder/_getFolderById', {
+        user: currentUser?._id,
+        folder: moveGroupTargetId.value,
+      });
+      if (folderRes.data?.error) {
+        alert(folderRes.data.error || 'Invalid target folder');
+        return;
+      }
+      const targetFolder: Folder = folderRes.data;
+      targetFolderName = targetFolder.name;
     }
-    const targetFolder: Folder = folderRes.data;
-    const targetFolderName = targetFolder.name;
+
 
     // add to target folder
     const addRes = await axios.post('http://localhost:8000/api/Folder/addGroupToFolder', {
       user: currentUser?._id,
       folderName: targetFolderName,
-      group: groupToMoveForModal.value,
+      group: groupToMoveForModal.value._id,
     });
     if (addRes.data?.error) {
       alert(addRes.data.error);
@@ -439,7 +465,13 @@ const moveGroupConfirm = async () => {
     }
 
     // remove from source folder (if we have a current folder id) else root
-    const sourceFolderId = currentFolder.value?._id || ".root";
+    const rootFolderRes = await axios.post('http://localhost:8000/api/Folder/_getRootFolder', {
+        user: currentUser._id,
+      });
+
+    const sourceFolderId = currentFolder.value?._id || rootFolderRes.data[0]._id;
+        console.log(targetFolderName, groupToMoveForModal.value._id,currentFolder.value,rootFolderRes.data[0]._id,sourceFolderId);
+
     const removeRes = await axios.post('http://localhost:8000/api/Folder/removeGroupFromFolder', {
       user: currentUser?._id,
       folder: sourceFolderId,
@@ -484,9 +516,7 @@ const handleContextAction = (action: 'rename' | 'move' | 'open', type: 'folder' 
     else if (action === 'open') openFolder(folder);
   } else if (type === 'group' && target.type === 'group') {
     const group = target.item as Group;
-    if (action === 'rename') {
-      alert('Group rename is not supported by the server API.');
-    } else if (action === 'move') openMoveGroupModal(group);
+     if (action === 'move') openMoveGroupModal(group);
     else if (action === 'open') handleGroupClick(group);
   }
   closeContextMenu();
@@ -499,12 +529,12 @@ const onDocClick = (e: MouseEvent) => {
   }
 };
 
-// --- replace the onMounted block with this ---
 onMounted(() => {
   loadFolders();
   loadRootTree(); // populate sidebar folder tree
   document.addEventListener('click', onDocClick);
-});onBeforeUnmount(() => {
+});
+onBeforeUnmount(() => {
   document.removeEventListener('click', onDocClick);
 });
 </script>
@@ -530,7 +560,7 @@ onMounted(() => {
             </div>
             <div class="row">
               <button v-if="currentFolder" class="btn ghost" @click="goToParent">⬅ Back</button>
-              <button v-if="currentFolder" class="btn ghost" @click="deleteFolder(currentFolder)">🗑 Delete</button>
+<button v-if="currentFolder" class="btn danger" @click="openDeleteFolderModal(currentFolder)">🗑 Delete</button>
             </div>
           </div>
 
@@ -599,10 +629,22 @@ onMounted(() => {
         </div>
         <div v-else-if="contextMenuTarget?.type === 'group'">
           <div class="context-item" @click="() => handleContextAction('open', 'group')">Open</div>
-          <div class="context-item" @click="() => handleContextAction('rename', 'group')">Rename</div>
           <div class="context-item" @click="() => handleContextAction('move', 'group')">Move</div>
         </div>
       </div>
+
+      <!-- Delete Folder Modal -->
+<div v-if="showDeleteFolderModal" class="modal-overlay">
+  <div class="modal panel" style="max-width:420px;">
+    <h3 class="h2">Delete Folder</h3>
+    <p>Are you sure you want to delete "<strong>{{ folderToDelete?.name }}</strong>"?</p>
+    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
+      <button class="btn cancel" @click="showDeleteFolderModal = false; folderToDelete = null">Cancel</button>
+      <button class="btn danger" @click="confirmDeleteFolder">Delete</button>
+    </div>
+  </div>
+</div>
+
 
       <!-- Rename Folder Modal -->
       <div v-if="showRenameModal" class="modal-overlay">
@@ -610,7 +652,7 @@ onMounted(() => {
           <h3 class="h2">Rename Folder</h3>
           <input class="input" v-model="renameFolderName" placeholder="New Folder Name" />
           <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
-            <button class="btn ghost" @click="showRenameModal = false">Cancel</button>
+            <button class="btn cancel" @click="showRenameModal = false">Cancel</button>
             <button class="btn" @click="renameFolderConfirm">Rename</button>
           </div>
         </div>
@@ -619,11 +661,11 @@ onMounted(() => {
       <!-- Folder Creation Modal -->
       <div v-if="showFolderModal" class="modal-overlay">
         <div class="modal panel" style="max-width:420px;">
-          <h3 class="h2" style="color:white">Create Folder</h3>
+          <h3 class="h2">Create Folder</h3>
           <input class="input" v-model="newFolderName" placeholder="Folder Name" />
           <p v-if="errorMsg" class="error">A folder with this name already exists.</p>
           <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
-            <button class="btn ghost" @click="showFolderModal = false">Cancel</button>
+            <button class="btn cancel" @click="showFolderModal = false">Cancel</button>
             <button class="btn" @click="createFolder">Create</button>
           </div>
         </div>
@@ -637,7 +679,7 @@ onMounted(() => {
           <textarea class="input" v-model="newGroupDescription" placeholder="Group Description" rows="4" style="margin-top:5px;resize:vertical"></textarea>
           <p class="error" v-if="groupErrorMsg">{{ groupErrorMsg }}</p>
           <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
-            <button class="btn ghost" @click="showGroupModal = false">Cancel</button>
+            <button class="btn cancel" @click="showGroupModal = false">Cancel</button>
             <button class="btn" @click="createGroupConfirm">Create</button>
           </div>
         </div>
@@ -648,7 +690,7 @@ onMounted(() => {
         <div class="modal panel" style="max-width:520px;">
           <h3 class="h2">Move Folder: {{ folderToMoveForModal?.name }}</h3>
 
-          <div style="background-color:rgba(6,12,18,0.5); display:flex; gap:12px;">
+          <div style="background-color:rgba(6,12,18,0.5); border-radius:8px; display:flex; gap:12px;">
             <div style="background-color:aliceblue; flex:1; min-height:160px; max-height:320px; overflow:auto; border-radius:8px; padding:8px; border:1px solid rgba(255,255,255,0.03); background:transparent;">
               <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
                 <input type="radio" id="root-target" :checked="moveFolderTargetId === null" @change="moveFolderTargetId = null"/>
@@ -667,7 +709,13 @@ onMounted(() => {
 
                   <ul v-if="node.expanded && node.children && node.children.length" style="list-style:none; padding-left:18px; margin:6px 0 0 0;">
                     <li v-for="child in node.children" :key="child._id">
-                      <FolderTreeNode :node="child" :disabledSet="descendantsOfFolderToMove" v-model:selected="moveFolderTargetId" />
+                      <FolderTreeNode
+                        :node="child"
+                        :disabledSet="descendantsOfFolderToMove"
+                        v-model:selected="moveFolderTargetId"
+                        @toggle="() => loadChildrenForNode(child)"
+                        @update:selected="val => moveFolderTargetId = val"
+                      />
                     </li>
                   </ul>
                 </li>
@@ -676,7 +724,7 @@ onMounted(() => {
           </div>
 
           <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
-            <button class="btn ghost" @click="showMoveFolderModal = false">Cancel</button>
+            <button class="btn cancel" @click="showMoveFolderModal = false">Cancel</button>
             <button class="btn" @click="moveFolderConfirm">Move</button>
           </div>
         </div>
@@ -685,16 +733,17 @@ onMounted(() => {
       <!-- Move Group Modal (folder-tree) -->
       <div v-if="showMoveGroupModal" class="modal-overlay">
         <div class="modal panel" style="max-width:520px;">
-          <h3 class="h2">Move Group</h3>
-          <div style="margin-bottom:8px;">
-            <div style="font-weight:700;">Moving:</div>
-            <div style="margin-top:6px;">{{ groupToMoveForModal?.name }}</div>
-          </div>
+          <h3 class="h2">Move Group: {{ groupToMoveForModal?.name }}</h3>
 
-          <label class="muted" style="display:block; margin-bottom:6px;">Select target folder</label>
 
-          <div style="display:flex; gap:12px;">
+
+          <div style="background-color: rgba(0,0,0,0.3); border-radius:8px; display:flex; gap:12px;">
             <div style="flex:1; min-height:160px; max-height:320px; overflow:auto; border-radius:8px; padding:8px; border:1px solid rgba(255,255,255,0.03); background:transparent;">
+              <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                <input type="radio" id="root-target-group" :checked="moveGroupTargetId === null" @change="moveGroupTargetId = null"/>
+                <label for="root-target-group">Root</label>
+              </div>
+
               <ul class="folder-tree" style="list-style:none; padding-left:6px; margin:0;">
                 <li v-for="node in folderTree" :key="node._id">
                   <div class="folder-node">
@@ -705,7 +754,13 @@ onMounted(() => {
 
                   <ul v-if="node.expanded && node.children && node.children.length" style="list-style:none; padding-left:18px; margin:6px 0 0 0;">
                     <li v-for="child in node.children" :key="child._id">
-                      <FolderTreeNode :node="child" :disabledSet="null" v-model:selected="moveGroupTargetId" />
+                      <FolderTreeNode
+                        :node="child"
+                        :disabledSet="null"
+                        v-model:selected="moveGroupTargetId"
+                        @toggle="() => loadChildrenForNode(child)"
+                        @update:selected="val => moveGroupTargetId = val"
+                      />
                     </li>
                   </ul>
                 </li>
@@ -714,7 +769,7 @@ onMounted(() => {
           </div>
 
           <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
-            <button class="btn ghost" @click="showMoveGroupModal = false">Cancel</button>
+            <button class="btn cancel" @click="showMoveGroupModal = false">Cancel</button>
             <button class="btn" @click="moveGroupConfirm">Move</button>
           </div>
         </div>
@@ -723,44 +778,6 @@ onMounted(() => {
     </div>
   </div>
 </template>
-
-<!-- small recursive child node component used by the tree -->
-<script lang="ts">
-import { defineComponent, PropType } from 'vue';
-
-export default defineComponent({
-  name: 'FolderTreeNode',
-  props: {
-    node: { type: Object as PropType<FolderNode>, required: true },
-    disabledSet: { type: Object as PropType<Set<string> | null>, default: null },
-    modelValue: { type: String as PropType<string | null>, default: null }
-  },
-  emits: ['update:selected'],
-  setup(props, { emit }) {
-    const toggle = async () => {
-      // call parent's loadChildrenForNode via global event? simpler: use a custom event via DOM is not ideal.
-      // But we can't access the parent's function here. To keep things simple and avoid major refactor,
-      // this component will rely on the parent having already loaded children when expanding top nodes.
-      props.node.expanded = !props.node.expanded;
-    };
-    return { toggle, emit };
-  },
-  template: `
-    <div>
-      <div class="folder-node" :class="{ disabled: disabledSet && disabledSet.has(node._id) }">
-        <button class="node-expander" @click="toggle">{{ node.expanded ? '▾' : (node.loaded ? '▸' : '▸') }}</button>
-        <input type="radio" :value="node._id" :checked="modelValue === node._id" @change="$emit('update:selected', node._id)" :disabled="disabledSet && disabledSet.has(node._id)"/>
-        <span class="node-label" @click="$emit('update:selected', node._id)">{{ node.name }}</span>
-      </div>
-      <ul v-if="node.expanded && node.children && node.children.length" style="list-style:none; padding-left:18px; margin:6px 0 0 0;">
-        <li v-for="child in node.children" :key="child._id">
-          <FolderTreeNode :node="child" :disabledSet="disabledSet" v-model:selected="modelValue" @update:selected="$emit('update:selected', $event)"/>
-        </li>
-      </ul>
-    </div>
-  `
-});
-</script>
 
 <style scoped>
 /* preserve existing CSS and add only minimal tree styles */
@@ -779,7 +796,7 @@ export default defineComponent({
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(6,12,18,0.5);
+  background: linear-gradient(180deg, rgba(6,12,18,0.2), var(--brand-deep));
   display:flex;
   align-items:center;
   justify-content:center;
@@ -793,7 +810,7 @@ export default defineComponent({
   width: 94%;
   max-width: 520px;
   border-width: 0;
-  background: linear-gradient(120deg, var(--brand-deep),var(--brand-vivid));
+  background: var(--card);
 }
 
 .panel.card {
@@ -834,6 +851,7 @@ export default defineComponent({
   /* box-shadow: 0 18px 32px rgba(4,10,24,0.35); */
   z-index: 2; /* lift above siblings slightly */
 }
+
 
 /* slightly smaller lift on touch/smaller screens */
 @media (max-width: 700px) {

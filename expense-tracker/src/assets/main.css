@@ -26,6 +26,9 @@
   align-items: flex-start;
 }
 
+.p{
+  color: var(--muted);
+}
 .page .content {
   width: 100%;
   max-width: var(--max-width);

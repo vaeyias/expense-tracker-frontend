@@ -1,14 +1,38 @@
 <template>
-  <div class="login-container">
-    <h1>Login</h1>
-    <input v-model="username" placeholder="Username" />
-    <input v-model="password" type="password" placeholder="Password" />
-    <p class="error" v-if="errorMsg">{{ errorMsg }}</p>
-    <button @click="login">Login</button>
-    <p>
-      Don't have an account?
-      <button @click="goToCreateAccount">Create Account</button>
-    </p>
+  <div class="page">
+    <div class="content">
+      <div class="panel card" style="max-width:520px;margin:32px auto;">
+        <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div>
+            <div class="h1">Login</div>
+            <div style="color:var(--muted);font-size:0.95rem">Enter your credentials to continue</div>
+          </div>
+        </div>
+
+        <div class="form" style="margin-top:18px; display:grid; gap:12px;">
+          <div class="form-row">
+            <label class="h2" for="username">Username</label>
+            <input autocomplete="off" id="username" class="input" v-model="username" placeholder="Username"/>
+          </div>
+
+          <div class="form-row">
+            <label class="h2" for="password">Password</label>
+            <input autocomplete="off" id="password" type="password" class="input" v-model="password" placeholder="Password"/>
+          </div>
+
+          <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
+
+          <div class="form-footer">
+            <button class="btn" @click="login">Login</button>
+          </div>
+
+          <p style="text-align:center; margin-top:12px; color:var(--muted)">
+            Don't have an account?
+            <button class="btn ghost" @click="goToCreateAccount" style="margin-left:6px;">Create Account</button>
+          </p>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -33,7 +57,7 @@ const login = async () => {
 
   try {
     const res = await axios.post('http://localhost:8000/api/Authentication/authenticate', {
-      username: username.value,
+      username: username.value.toLowerCase(),
       password: password.value,
     });
 
@@ -43,20 +67,21 @@ const login = async () => {
     }
 
     const userInfoRes = await axios.post('http://localhost:8000/api/Authentication/_getUserByUsername',{
-        username:username.value,
-    })
+        username:username.value.toLowerCase(),
+    });
 
     if (userInfoRes.data.error) {
       errorMsg.value = `Login failed: ${userInfoRes.data.error}`;
       return;
     }
 
-    // Store user info globally and locally
-    const userInfo = { _id: res.data.user, username: username.value, displayName:userInfoRes.data.userInfo.displayName };
-    console.log(userInfoRes.data.userInfo.displayName);
+    const userInfo = {
+      _id: res.data.user,
+      username: username.value.toLowerCase(),
+      displayName: userInfoRes.data.userInfo.displayName
+    };
     userStore.setUser(userInfo);
     localStorage.setItem('currentUser', JSON.stringify(userInfo));
-
 
     router.push('/');
   } catch (err) {
@@ -69,26 +94,41 @@ const goToCreateAccount = () => router.push('/register');
 </script>
 
 <style scoped>
-.login-container {
-  max-width: 400px;
-  margin: 100px auto;
-  text-align: center;
-  color:black;
+/* small extra spacing for mobile */
+@media (max-width:700px){
+  .panel { padding: 18px; margin: 18px 12px; border-radius: 12px; }
 }
 
-input {
+/* shared form styles */
+.input {
   display: block;
-  margin: 10px auto;
+  width: 100%;
   padding: 8px;
-  width: 80%;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
 }
 
-button {
-  margin: 5px;
-  padding: 8px 12px;
+.form-footer {
+  display: flex;
+  justify-content: center; /* center login button */
+  margin-top: 12px;
 }
+
+
+.btn.ghost{
+  color:white;
+}
+
+.btn.ghost:hover{
+  color:white;
+}
+
+
+
 
 .error {
   color: red;
+  font-size: 0.9rem;
 }
 </style>

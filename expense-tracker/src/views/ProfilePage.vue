@@ -12,7 +12,7 @@ const storedUser = localStorage.getItem('currentUser');
 const currentUser = storedUser ? JSON.parse(storedUser) : null;
 
 const displayName = ref(currentUser?.displayName || '');
-const username = currentUser?.username || '';
+const username = currentUser?.username.toLowerCase() || '';
 const errorMsg = ref('');
 const successMsg = ref('');
 const editing = ref(false); // track if in edit mode
@@ -98,7 +98,8 @@ const cancelEditing = () => {
       <!-- Edit area (centered) -->
       <div class="edit-area">
         <template v-if="editing">
-          <input class="input edit-input" v-model="displayName" placeholder="Enter new display name" />
+          <input class="input edit-input"  autocomplete="off"
+ v-model="displayName" placeholder="Enter new display name" />
           <div class="edit-actions">
             <button class="btn" @click="saveDisplayName">Save</button>
             <button class="btn ghost" @click="cancelEditing">Cancel</button>
@@ -123,7 +124,7 @@ const cancelEditing = () => {
 <style scoped>
 /* Root fills available area and centers content */
 .profile-root {
-  min-height: calc(100vh - 72px); /* account for top nav height roughly */
+  min-height: calc(80vh - 72px); /* account for top nav height roughly */
   display: flex;
   justify-content: center;
   padding: 2rem;
