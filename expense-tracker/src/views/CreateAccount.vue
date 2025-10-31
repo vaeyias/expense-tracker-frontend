@@ -22,7 +22,7 @@
 
           <div class="form-row">
             <label class="h2" for="password">Password</label>
-            <input autocomplet="off" id="password" class="input" type="password" v-model="password" placeholder="Choose a secure password"/>
+            <input autocomplete="off" id="password" class="input" type="password" v-model="password" placeholder="Choose a secure password"/>
           </div>
 
           <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
