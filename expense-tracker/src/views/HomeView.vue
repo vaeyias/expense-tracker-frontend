@@ -668,7 +668,7 @@ onBeforeUnmount(() => {
       <div v-if="showFolderModal" class="modal-overlay">
         <div class="modal panel" style="max-width:420px;">
           <h3 class="h2">Create Folder</h3>
-          <input class="input" v-model="newFolderName" placeholder="Folder Name" />
+          <input autocomplete="off" class="input" v-model="newFolderName" placeholder="Folder Name" />
           <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
 
           <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
@@ -682,7 +682,7 @@ onBeforeUnmount(() => {
       <div v-if="showGroupModal" class="modal-overlay">
         <div class="modal panel" style="max-width:520px;">
           <h3 class="h2">Create Group</h3>
-          <input class="input" v-model="newGroupName" placeholder="Group Name" />
+          <input autocomplete="off" class="input" v-model="newGroupName" placeholder="Group Name" />
           <textarea class="input" v-model="newGroupDescription" placeholder="Group Description" rows="4" style="margin-top:5px;resize:vertical"></textarea>
           <p class="error" v-if="groupErrorMsg">{{ groupErrorMsg }}</p>
           <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">

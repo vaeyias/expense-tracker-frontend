@@ -253,6 +253,7 @@ onMounted(loadUsers);
         <div class="add-row">
           <input
             v-model="newUsername"
+            autocomplete="off"
             class="gm-input"
             placeholder="Add member by username"
             @keyup.enter="addUser"

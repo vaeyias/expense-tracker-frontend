@@ -329,6 +329,7 @@ onBeforeUnmount(() => {
 
           <input
             v-model.number="paymentAmount"
+            autocomplete="off"
             type="number"
             min="0"
             placeholder="Payment Amount"
