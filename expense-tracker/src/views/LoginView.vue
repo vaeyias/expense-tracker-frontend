@@ -12,7 +12,7 @@
         <div class="form" style="margin-top:18px; display:grid; gap:12px;">
           <div class="form-row">
             <label class="h2" for="username">Username</label>
-            <input autocomplete="off" id="username" class="input" v-model="username" placeholder="Username"/>
+            <input autocomplete="off" maxlength="20" id="username" class="input" v-model="username" placeholder="Username"/>
           </div>
 
           <div class="form-row">
