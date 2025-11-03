@@ -93,6 +93,7 @@ const addUser = async () => {
       group: props.groupId,
       inviter: currentUser.value,
       newMember: newUserId,
+      token: userStore.currentUser?.token,
     });
 
     if (res.data.error) {
@@ -106,11 +107,6 @@ const addUser = async () => {
       try {
         await axios.post('http://localhost:8000/api/Debt/createDebt', { userA: newUserId, userB: member._id });
       } catch {}
-      await axios.post('http://localhost:8000/api/Folder/addGroupToFolder', {
-        user: newUserId,
-        folderName: '.root',
-        group: props.groupId,
-      });
     }
 
     newUsername.value = '';

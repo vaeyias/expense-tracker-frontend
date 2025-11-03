@@ -262,6 +262,7 @@ const createGroupConfirm = async () => {
       name: newGroupName.value.trim(),
       description: newGroupDescription.value.trim(),
       token: currentUser.token,
+      folderName: currentFolder.value ? currentFolder.value.name : ".root",
     });
     if (res.data.error) {
       groupErrorMsg.value = res.data.error;
@@ -269,22 +270,6 @@ const createGroupConfirm = async () => {
     }
 
     const group: Group = res.data.group;
-
-    if (currentFolder.value) {
-      await axios.post('http://localhost:8000/api/Folder/addGroupToFolder', {
-        user: currentUser?._id,
-        folderName: currentFolder.value.name,
-        group,
-        token: currentUser.token,
-      });
-    } else {
-      await axios.post('http://localhost:8000/api/Folder/addGroupToFolder', {
-        user: currentUser?._id,
-        folderName: ".root",
-        group,
-        token: currentUser.token,
-      });
-    }
 
     groups.value.push(group);
     await loadFolders(currentFolder.value?._id || null);
@@ -484,7 +469,6 @@ const moveGroupConfirm = async () => {
       });
     } else{
       // source is current folder
-      console.log("current",currentFolder.value._id);
       await axios.post('http://localhost:8000/api/Folder/removeGroupFromFolder', {
         user: currentUser?._id,
         folder: currentFolder.value._id,
