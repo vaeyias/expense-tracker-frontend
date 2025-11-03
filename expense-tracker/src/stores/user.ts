@@ -1,10 +1,17 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
-export const useUserStore = defineStore('user', () => {
-  const currentUser = ref<{ username: string; displayName: string } | null>(null);
+interface User {
+  _id: string;
+  username: string;
+  displayName: string;
+  token: string;
+}
 
-  const setUser = (user: { username: string; displayName: string }) => {
+export const useUserStore = defineStore('user', () => {
+  const currentUser = ref<User | null>(null);
+
+  const setUser = (user: User) => {
     currentUser.value = user;
     localStorage.setItem('currentUser', JSON.stringify(user));
   };
@@ -15,8 +22,9 @@ export const useUserStore = defineStore('user', () => {
   };
 
   // Load user from localStorage on page reload
-  if (localStorage.getItem('currentUser')) {
-    currentUser.value = JSON.parse(localStorage.getItem('currentUser')!);
+  const stored = localStorage.getItem('currentUser');
+  if (stored) {
+    currentUser.value = JSON.parse(stored);
   }
 
   return { currentUser, setUser, clearUser };

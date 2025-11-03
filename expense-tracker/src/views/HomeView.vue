@@ -77,12 +77,12 @@ const loadFolders = async (folderId: string | null = null) => {
   try {
     let res;
     if (!folderId) {
-      res = await axios.post('http://localhost:8000/api/Folder/_getRootFolder', {
+      res = await axios.post('http://localhost:8000/api/Folder/getRootFolder', {
         user: currentUser._id,
       });
       currentFolder.value = null;
     } else {
-      res = await axios.post('http://localhost:8000/api/Folder/_listSubfolders', {
+      res = await axios.post('http://localhost:8000/api/Folder/listSubfolders', {
         user: currentUser._id,
         parent: folderId,
       });
@@ -129,6 +129,7 @@ const confirmDeleteFolder = async () => {
     const res = await axios.post('http://localhost:8000/api/Folder/deleteFolder', {
       user: currentUser?._id,
       folder: folderToDelete.value._id,
+      token: currentUser.token,
     });
 
     if (res.data.error) {
@@ -181,6 +182,7 @@ const createFolder = async () => {
       owner: currentUser._id,
       parent: currentFolder.value?._id || null,
       name: newFolderName.value,
+      token: currentUser.token,
     });
     if (res.data.error) {
       errorMsg.value = res.data.error;
@@ -210,9 +212,10 @@ const renameFolderConfirm = async () => {
       user: currentUser?._id,
       folder: folderToRename.value._id,
       name: renameFolderName.value.trim(),
+      token: currentUser.token,
     });
     if (res.data.error) {
-      alert(res.data.error);
+      errorMsg.value = res.data.error;
       return;
     }
 
@@ -226,7 +229,7 @@ const renameFolderConfirm = async () => {
     renameFolderName.value = '';
   } catch (err) {
     console.error(err);
-    alert('Failed to rename folder.');
+    errorMsg.value = 'Failed to rename folder.';
   }
 };
 
@@ -258,6 +261,7 @@ const createGroupConfirm = async () => {
       creator: currentUser?._id,
       name: newGroupName.value.trim(),
       description: newGroupDescription.value.trim(),
+      token: currentUser.token,
     });
     if (res.data.error) {
       groupErrorMsg.value = res.data.error;
@@ -271,12 +275,14 @@ const createGroupConfirm = async () => {
         user: currentUser?._id,
         folderName: currentFolder.value.name,
         group,
+        token: currentUser.token,
       });
     } else {
       await axios.post('http://localhost:8000/api/Folder/addGroupToFolder', {
         user: currentUser?._id,
         folderName: ".root",
         group,
+        token: currentUser.token,
       });
     }
 
@@ -298,10 +304,13 @@ const createGroupConfirm = async () => {
 const loadRootTree = async () => {
   if (!currentUser) return;
   try {
-    const res = await axios.post('http://localhost:8000/api/Folder/_getRootFolder', {
+    const res = await axios.post('http://localhost:8000/api/Folder/getRootFolder', {
       user: currentUser._id,
+      token: currentUser.token,
     });
     const data: Folder[] = res.data || [];
+
+    console.log(res.data)
 
     // create nodes and mark as loaded (we will populate children recursively)
     folderTree.value = data.map((f) => ({ ...f, children: [], expanded: false, loaded: true }));
@@ -309,9 +318,10 @@ const loadRootTree = async () => {
     // recursively load all children for each root node (depth-first)
     const fetchChildrenRecursively = async (node: FolderNode) => {
       try {
-        const r = await axios.post('http://localhost:8000/api/Folder/_listSubfolders', {
+        const r = await axios.post('http://localhost:8000/api/Folder/listSubfolders', {
           user: currentUser._id,
           parent: node._id,
+          token: currentUser.token,
         });
         const childData: Folder[] = r.data || [];
         node.children = childData.map((c) => ({ ...c, children: [], expanded: false, loaded: true }));
@@ -340,9 +350,10 @@ const loadChildrenForNode = async (node: FolderNode) => {
     return;
   }
   try {
-    const res = await axios.post('http://localhost:8000/api/Folder/_listSubfolders', {
+    const res = await axios.post('http://localhost:8000/api/Folder/listSubfolders', {
       user: currentUser._id,
       parent: node._id,
+      token: currentUser.token,
     });
     const data: Folder[] = res.data || [];
     node.children = data.map((f) => ({ ...f, children: [], expanded: false, loaded: false }));
@@ -361,9 +372,10 @@ const fetchDescendants = async (folderId: string | null) => {
   while (stack.length) {
     const id = stack.pop()!;
     try {
-      const res = await axios.post('http://localhost:8000/api/Folder/_listSubfolders', {
+      const res = await axios.post('http://localhost:8000/api/Folder/listSubfolders', {
         user: currentUser?._id,
         parent: id,
+        token: currentUser.token,
       });
       const children: Folder[] = res.data || [];
       for (const c of children) {
@@ -401,10 +413,11 @@ const moveFolderConfirm = async () => {
       user: currentUser?._id,
       folderToMove: folderToMoveForModal.value._id,
       newParent: moveFolderTargetId.value, // can be null for root
+      token: currentUser.token,
     };
     const res = await axios.post('http://localhost:8000/api/Folder/moveFolder', payload);
     if (res.data?.error) {
-      alert(res.data.error);
+      errorMsg.value = res.data.error;
       return;
     }
     showMoveFolderModal.value = false;
@@ -414,7 +427,7 @@ const moveFolderConfirm = async () => {
     await loadFolders(currentFolder.value?._id || null);
   } catch (err) {
     console.error('Failed moving folder', err);
-    alert('Failed to move folder');
+    errorMsg.value = 'Failed to move folder';
   }
 };
 
@@ -444,6 +457,7 @@ const moveGroupConfirm = async () => {
       const folderRes = await axios.post('http://localhost:8000/api/Folder/_getFolderById', {
         user: currentUser?._id,
         folder: moveGroupTargetId.value,
+        token: currentUser.token,
       });
       if (folderRes.data?.error) {
         alert(folderRes.data.error || 'Invalid target folder');
@@ -456,6 +470,7 @@ const moveGroupConfirm = async () => {
       // remove from source folder (if we have a current folder id) else root
     const rootFolderRes = await axios.post('http://localhost:8000/api/Folder/_getRootId', {
         user: currentUser._id,
+        token: currentUser.token,
       });
 
     if (!currentFolder.value){
@@ -465,6 +480,7 @@ const moveGroupConfirm = async () => {
         user: currentUser?._id,
         folder: rootFolderRes.data[0]._id,
         group: groupToMoveForModal.value._id,
+        token: currentUser.token,
       });
     } else{
       // source is current folder
@@ -473,6 +489,7 @@ const moveGroupConfirm = async () => {
         user: currentUser?._id,
         folder: currentFolder.value._id,
         group: groupToMoveForModal.value._id,
+        token: currentUser.token,
       });
     }
 
@@ -483,6 +500,7 @@ const moveGroupConfirm = async () => {
       user: currentUser?._id,
       folderName: targetFolderName,
       group: groupToMoveForModal.value._id,
+      token: currentUser.token,
     });
 
 

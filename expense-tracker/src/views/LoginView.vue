@@ -66,22 +66,16 @@ const login = async () => {
       return;
     }
 
-    const userInfoRes = await axios.post('http://localhost:8000/api/Authentication/_getUserByUsername',{
-        username:username.value.toLowerCase(),
-    });
-
-    if (userInfoRes.data.error) {
-      errorMsg.value = `Login failed: ${userInfoRes.data.error}`;
-      return;
-    }
+    const { user: userId, token } = res.data;
 
     const userInfo = {
-      _id: res.data.user,
+      _id: userId,
       username: username.value.toLowerCase(),
-      displayName: userInfoRes.data.userInfo.displayName
+      displayName: username.value, // or pull from DB if needed
+      token,
     };
+
     userStore.setUser(userInfo);
-    localStorage.setItem('currentUser', JSON.stringify(userInfo));
 
     router.push('/');
   } catch (err) {

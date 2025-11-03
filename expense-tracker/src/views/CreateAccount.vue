@@ -58,35 +58,39 @@ const createAccount = async () => {
   }
 
   try {
-    const res = await axios.post('http://localhost:8000/api/Authentication/createUser', {
+    // Step 1: create user
+    const createRes = await axios.post('http://localhost:8000/api/Authentication/createUser', {
       username: username.value.toLowerCase(),
       displayName: displayName.value,
       password: password.value,
     });
 
-    if (res.data?.error) {
-      errorMsg.value = res.data.error;
+    if (createRes.data?.error) {
+      errorMsg.value = createRes.data.error;
       return;
     }
 
-    const folderRes = await axios.post('http://localhost:8000/api/Folder/createFolder', {
-      owner: res.data.user,
-      name: ".root",
-      parent: ".parent_root",
+    // Step 2: authenticate to get token
+    const authRes = await axios.post('http://localhost:8000/api/Authentication/authenticate', {
+      username: username.value.toLowerCase(),
+      password: password.value,
     });
 
-    if (folderRes.data?.error) {
-      errorMsg.value = folderRes.data.error;
+    if (authRes.data?.error) {
+      errorMsg.value = authRes.data.error;
       return;
     }
 
+    const { user: userId, token } = authRes.data;
+
     const userInfo = {
-      _id: res.data.user,
-      username: username.value,
+      _id: userId,
+      username: username.value.toLowerCase(),
       displayName: displayName.value,
+      token,
     };
-    userStore.setUser(userInfo);
-    localStorage.setItem('currentUser', JSON.stringify(userInfo));
+
+    userStore.setUser(userInfo); // stores in Pinia + localStorage
     router.push('/');
   } catch (err) {
     errorMsg.value = 'Account creation failed. Please try again.';

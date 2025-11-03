@@ -29,6 +29,7 @@ const saveDisplayName = async () => {
   try {
     const res = await axios.post('http://localhost:8000/api/Authentication/editUser', {
       user: currentUser._id,
+      token: currentUser.token,
       newDisplayName: displayName.value
     });
 
@@ -60,9 +61,10 @@ const saveDisplayName = async () => {
 };
 
 // Logout function
-const logout = () => {
+const logout = async () => {
   localStorage.removeItem('currentUser');
   userStore.clearUser();
+  await axios.post('http://localhost:8000/api/Authentication/logout', { user: currentUser._id, token: currentUser.token });
   router.push('/login');
 };
 
