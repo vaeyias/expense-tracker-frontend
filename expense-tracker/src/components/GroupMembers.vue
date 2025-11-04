@@ -47,16 +47,16 @@ const canRemoveOrLeave = async (userId: string) => {
 const loadUsers = async () => {
   try {
     const res = await axios.post('http://localhost:8000/api/Group/_listMembers', { group: props.groupId });
-    const memberIds: string[] = Array.isArray(res.data.members) ? res.data.members : [];
+    const a: string[] = Array.isArray(res.data.members) ? res.data.members : [];
 
-    const allMembers: User[] = [];
+    const allMembers: User[] = Array.isArray(res.data.members) ? res.data.members : [];;
 
-    for (const userId of memberIds) {
-      const userObjRes = await axios.post('http://localhost:8000/api/Authentication/_getUserById', { user: userId });
-      if (userObjRes.data?.userInfo) {
-        allMembers.push(userObjRes.data.userInfo);
-      }
-    }
+    // for (const userId of memberIds) {
+    //   const userObjRes = await axios.post('http://localhost:8000/api/Authentication/_getUserById', { user: userId });
+    //   if (userObjRes.data?.userInfo) {
+    //     allMembers.push(userObjRes.data.userInfo);
+    //   }
+    // }
 
     // Compute allowedToLeave after fetching all user data
     users.value = await Promise.all(
@@ -91,7 +91,7 @@ const addUser = async () => {
 
     const res = await axios.post('http://localhost:8000/api/Group/addUser', {
       group: props.groupId,
-      inviter: currentUser.value,
+      inviter: userStore.currentUser?._id,
       newMember: newUserId,
       token: userStore.currentUser?.token,
     });
@@ -105,7 +105,7 @@ const addUser = async () => {
     for (const member of users.value) {
       if (member._id === newUserId) continue;
       try {
-        await axios.post('http://localhost:8000/api/Debt/createDebt', { userA: newUserId, userB: member._id });
+        await axios.post('http://localhost:8000/api/Debt/createDebt', { userA: newUserId, userB: member._id,token: userStore.currentUser?.token  ,user: userStore.currentUser?._id  });
       } catch {}
     }
 
@@ -123,7 +123,8 @@ const leaveGroup = async () => {
   try {
     const res = await axios.post('http://localhost:8000/api/Group/leaveGroup', {
       group: props.groupId,
-      member: currentUser.value,
+      member: userStore.currentUser?._id,
+      token: userStore.currentUser?.token,
     });
 
     if (res.data.error) {
@@ -131,7 +132,7 @@ const leaveGroup = async () => {
       return;
     }
     const folderRes = await axios.post('http://localhost:8000/api/Folder/_getFolderByGroupAndUser', {
-      user: currentUser.value,
+      user: userStore.currentUser?._id,
       group: props.groupId,
     });
 
@@ -143,9 +144,10 @@ const leaveGroup = async () => {
     const folderId = folderRes.data._id;
 
     const res2 = await axios.post('http://localhost:8000/api/Folder/removeGroupFromFolder', {
-      user: currentUser.value,
+      user: userStore.currentUser?._id,
       folder: folderId,
       group: props.groupId,
+      token: userStore.currentUser?.token,
     });
 
     if (res2.data.error) {
@@ -191,7 +193,7 @@ const removeUser = async (userId: string) => {
 
     const res = await axios.post('http://localhost:8000/api/Group/removeUser', {
       group: props.groupId,
-      remover: currentUser.value,
+      remover: userStore.currentUser?._id,
       member: userId,
     });
 
@@ -222,7 +224,7 @@ const attemptRemove = async (user: User) => {
 
 // Called when clicking Leave Group for current user
 const attemptLeave = async () => {
-  const me = users.value.find((u) => u._id === currentUser.value);
+  const me = users.value.find((u) => u._id === userStore.currentUser?._id);
   if (me && !me.allowedToLeave) {
     errorMsg.value = 'You cannot leave this group because you are involved in expenses here.';
     return;

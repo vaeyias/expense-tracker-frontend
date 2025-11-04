@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
-
+import { useUserStore } from '../stores/user';
+const userStore = useUserStore();
 interface Member {
   _id: string;
   displayName: string;
@@ -36,15 +37,7 @@ const userSplits = ref<UserSplit[]>([]);
 const loadMembers = async () => {
   try {
     const res = await axios.post('http://localhost:8000/api/Group/_listMembers', { group: props.groupId });
-    const memberIds: string[] = Array.isArray(res.data?.members) ? res.data.members : [];
-    const allMembers: Member[] = [];
-
-    // fetch user details in parallel for speed
-    const requests = memberIds.map((id) =>
-      axios.post('http://localhost:8000/api/Authentication/_getUserById', { user: id }).then(r => r.data?.userInfo).catch(() => null)
-    );
-    const results = await Promise.all(requests);
-    for (const u of results) if (u) allMembers.push(u);
+    const allMembers: Member[] = Array.isArray(res.data?.members) ? res.data.members : [];
 
     members.value = allMembers;
   } catch (err) {
@@ -116,6 +109,7 @@ const createExpense = async () => {
     const res = await axios.post('http://localhost:8000/api/Expense/createExpense', {
       user: payer.value,
       group: props.groupId,
+      token: userStore.currentUser?.token,
     });
     if (res.data?.error) {
       errorMsg.value = res.data.error;
@@ -136,7 +130,9 @@ const createExpense = async () => {
       const r = await axios.post('http://localhost:8000/api/Expense/addUserSplit', {
         expense: expenseId,
         user: split.userId,
+        creator:userStore.currentUser?._id,
         amountOwed: split.amount,
+        token: userStore.currentUser?.token,
       });
       if (r.data?.error) console.error('Error adding split', r.data.error);
     } catch (err) {
@@ -153,32 +149,35 @@ const createExpense = async () => {
       totalCost: totalCost.value,
       date: new Date(date.value),
       payer: payer.value,
+      user: userStore.currentUser?._id,
+      token: userStore.currentUser?.token,
     });
     if (r.data?.error) {
       errorMsg.value = r.data.error;
-      await axios.post('http://localhost:8000/api/Expense/deleteExpense', { expenseToDelete: expenseId }).catch(() => {});
+      await axios.post('http://localhost:8000/api/Expense/deleteExpense', { expenseToDelete: expenseId, token: userStore.currentUser?.token }).catch(() => {});
       busy.value = false;
       return;
     }
   } catch (err) {
     console.error('Error editing expense', err);
-    await axios.post('http://localhost:8000/api/Expense/deleteExpense', { expenseToDelete: expenseId }).catch(() => {});
+    await axios.post('http://localhost:8000/api/Expense/deleteExpense', { expenseToDelete: expenseId, token: userStore.currentUser?.token }).catch(() => {});
     busy.value = false;
     return;
   }
 
-  for (const split of userSplits.value) {
-    if (!split.userId || split.amount === null) continue;
-    try {
-      await axios.post('http://localhost:8000/api/Debt/updateDebt', {
-        payer: payer.value,
-        receiver: split.userId,
-        amount: split.amount,
-      });
-    } catch (err) {
-      console.error(`Error updating debt between ${payer.value} and ${split.userId}`, err);
-    }
-  }
+  // for (const split of userSplits.value) {
+  //   if (!split.userId || split.amount === null) continue;
+  //   try {
+  //     await axios.post('http://localhost:8000/api/Debt/updateDebt', {
+  //       payer: payer.value,
+  //       receiver: split.userId,
+  //       amount: split.amount,
+  //       token: userStore.currentUser?.token,
+  //     });
+  //   } catch (err) {
+  //     console.error(`Error updating debt between ${payer.value} and ${split.userId}`, err);
+  //   }
+  // }
 
   busy.value = false;
   emit('refresh');

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
+import { useUserStore } from '../stores/user';
+const userStore = useUserStore();
 
 interface Member {
   _id: string
@@ -41,15 +43,11 @@ const showDeleteConfirm = ref(false)
 /* Load members */
 const loadMembers = async () => {
   try {
-    const res = await axios.post('http://localhost:8000/api/Group/_listMembers', {
-      group: props.groupId,
-    })
-    const memberIds: string[] = Array.isArray(res.data.members) ? res.data.members : []
-    const requests = memberIds.map((id) =>
-      axios.post('http://localhost:8000/api/Authentication/_getUserById', { user: id }).then(r => r.data?.userInfo).catch(() => null)
-    )
-    const results = await Promise.all(requests)
-    members.value = results.filter(Boolean)
+    const res = await axios.post('http://localhost:8000/api/Group/_listMembers', { group: props.groupId });
+    const allMembers: Member[] = Array.isArray(res.data?.members) ? res.data.members : [];
+
+    members.value = allMembers.filter(Boolean)
+    console.log('members loaded', members.value)
   } catch (err) {
     console.error('Error loading members', err)
   }
@@ -75,10 +73,13 @@ const loadExpense = async () => {
       expenseId: props.expenseId
     })
     const splits = Array.isArray(splitsRes.data.splits) ? splitsRes.data.splits : []
+    console.log('splits loaded', splits)
     userSplits.value = splits.map((s: any) => ({
       userId: s.user?._id || s.user,
       amount: s.amountOwed
     }))
+
+    console.log('userSplits', userSplits.value)
   } catch (err) {
     console.error('Error loading expense', err)
   }
@@ -99,6 +100,7 @@ const splitMismatch = computed(() => {
 /* allow current split's selected user to remain visible */
 const availableMembersForSplit = (currentUserId: string) => {
   const selectedIds = userSplits.value.map(s => s.userId).filter(Boolean)
+  console.log('selectedIds', selectedIds)
   return members.value.filter(m => !selectedIds.includes(m._id) || m._id === currentUserId)
 }
 
@@ -145,25 +147,27 @@ const updateExpense = async () => {
     const oldSplits = Array.isArray(oldSplitsRes.data.splits) ? oldSplitsRes.data.splits : []
 
     // Reverse debt effect of old splits
-    for (const split of oldSplits) {
-      try {
-        const userId = split.user._id || split.user
-        const amount = split.amountOwed
-        await axios.post('http://localhost:8000/api/Debt/updateDebt', {
-          payer: payer.value,
-          receiver: userId,
-          amount: -amount,
-        })
-      } catch (err) {
-        console.error(`Error reversing debt for ${split.user?._id || split.user}`, err)
-      }
-    }
+    // for (const split of oldSplits) {
+    //   try {
+    //     const userId = split.user._id || split.user
+    //     const amount = split.amountOwed
+    //     await axios.post('http://localhost:8000/api/Debt/updateDebt', {
+    //       payer: payer.value,
+    //       receiver: userId,
+    //       amount: -amount,
+    //     })
+    //   } catch (err) {
+    //     console.error(`Error reversing debt for ${split.user?._id || split.user}`, err)
+    //   }
+    // }
 
     // Remove old splits
     for (const split of oldSplits) {
       await axios.post('http://localhost:8000/api/Expense/removeUserSplit', {
         expense: props.expenseId,
-        userSplit: split._id
+        userSplit: split._id,
+        creator:userStore.currentUser?._id,
+        token: userStore.currentUser?.token,
       })
     }
 
@@ -174,16 +178,18 @@ const updateExpense = async () => {
         expense: props.expenseId,
         user: split.userId,
         amountOwed: split.amount,
+        token: userStore.currentUser?.token,
+        creator:userStore.currentUser?._id,
       })
-      try {
-        await axios.post('http://localhost:8000/api/Debt/updateDebt', {
-          payer: payer.value,
-          receiver: split.userId,
-          amount: split.amount,
-        })
-      } catch (err) {
-        console.error(`Error updating debt for ${split.userId}`, err)
-      }
+    //   try {
+        // await axios.post('http://localhost:8000/api/Debt/updateDebt', {
+        //   payer: payer.value,
+        //   receiver: split.userId,
+        //   amount: split.amount,
+        // })
+    //   } catch (err) {
+    //     console.error(`Error updating debt for ${split.userId}`, err)
+    //   }
     }
 
     // Update expense details
@@ -195,6 +201,8 @@ const updateExpense = async () => {
       totalCost: totalCost.value,
       date: new Date(date.value),
       payer: payer.value,
+      token: userStore.currentUser?.token,
+      user: userStore.currentUser?._id,
     })
 
     if (res.data?.error) {
@@ -225,15 +233,18 @@ const deleteExpense = async () => {
       try {
         const userId = split.user._id || split.user
         const amount = split.amountOwed
-        await axios.post('http://localhost:8000/api/Debt/updateDebt', {
-          payer: payer.value,
-          receiver: userId,
-          amount: -amount,
-        })
+        // await axios.post('http://localhost:8000/api/Debt/updateDebt', {
+        //   payer: payer.value,
+        //   receiver: userId,
+        //   amount: -amount,
+        // })
 
         await axios.post('http://localhost:8000/api/Expense/removeUserSplit', {
           expense: props.expenseId,
-          userSplit: split._id
+          userSplit: split._id,
+          token: userStore.currentUser?.token,
+          user: userStore.currentUser?._id,
+
         })
       } catch (err) {
         console.error(`Error reversing debt for ${split.user?._id || split.user}`, err)
@@ -241,7 +252,9 @@ const deleteExpense = async () => {
     }
 
     const res = await axios.post('http://localhost:8000/api/Expense/deleteExpense', {
-      expenseToDelete: props.expenseId
+      expenseToDelete: props.expenseId,
+      token: userStore.currentUser?.token,
+      user: userStore.currentUser?._id,
     })
     if (res.data?.error) {
       errorMsg.value = res.data.error
@@ -301,8 +314,10 @@ const confirmDelete = async () => {
         <div class="field wide">
           <label class="label">Payer</label>
           <select v-model="payer">
-            <option value="">Select payer</option>
-            <option style="background-color: var(--brand-deep);"   v-for="m in members" :key="m._id" :value="m._id">{{ m.displayName }}</option>
+          <option value="">Select payer</option>
+            <option v-for="m in members" :key="m._id" :value="m._id">
+              {{ m.displayName }}
+            </option>
           </select>
         </div>
 

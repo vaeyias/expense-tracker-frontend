@@ -212,7 +212,9 @@ const confirmPayment = async () => {
     const res = await axios.post('http://localhost:8000/api/Debt/updateDebt', {
       payer,
       receiver,
-      amount: paymentAmount.value
+      amount: paymentAmount.value,
+      token: userStore.currentUser?.token,
+      creator: userStore.currentUser?._id,
     })
     if (res.data.error) {
       errorMsg.value = res.data.error
