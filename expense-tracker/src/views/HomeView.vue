@@ -459,7 +459,6 @@ const moveGroupConfirm = async () => {
       });
 
     if (!currentFolder.value){
-      console.log("rootres",rootFolderRes);
       // source is root
       await axios.post('http://localhost:8000/api/Folder/removeGroupFromFolder', {
         user: currentUser?._id,
@@ -477,8 +476,6 @@ const moveGroupConfirm = async () => {
       });
     }
 
-
-
     // add to target folder
     await axios.post('http://localhost:8000/api/Folder/addGroupToFolder', {
       user: currentUser?._id,
@@ -486,7 +483,6 @@ const moveGroupConfirm = async () => {
       group: groupToMoveForModal.value._id,
       token: currentUser.token,
     });
-
 
 
     // Refresh

@@ -122,7 +122,7 @@ const goToCreateAccount = () => router.push('/register');
 
 
 .error {
-  color: red;
+  color: rgb(219, 84, 84);
   font-size: 0.9rem;
 }
 </style>
