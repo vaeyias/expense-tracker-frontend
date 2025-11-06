@@ -11,8 +11,8 @@ const currentUser = computed(() => {
 
 interface Debt {
   _id: string
-  userA: { _id: string; displayName: string }
-  userB: { _id: string; displayName: string }
+  userA: { _id: string; displayName: string; username: string }
+  userB: { _id: string; displayName: string; username: string  }
   balance: number
 }
 
@@ -35,6 +35,14 @@ const otherUser = computed(() => {
     : selectedDebt.value.userA.displayName
 })
 
+const otherUsername = computed(() => {
+  if (!selectedDebt.value) return ''
+  return selectedDebt.value.userA._id === currentUser.value
+    ? selectedDebt.value.userB.username
+    : selectedDebt.value.userA.username
+})
+
+
 const loadDebts = async () => {
   if (!currentUser.value) return
   try {
@@ -48,8 +56,8 @@ const loadDebts = async () => {
       const userARes = await axios.post('http://localhost:8000/api/Authentication/_getUserById', { user: d.userA })
       const userBRes = await axios.post('http://localhost:8000/api/Authentication/_getUserById', { user: d.userB })
 
-      const userA = userARes.data?.userInfo || { _id: d.userA, displayName: 'Unknown' }
-      const userB = userBRes.data?.userInfo || { _id: d.userB, displayName: 'Unknown' }
+      const userA = userARes.data?.userInfo || { _id: d.userA, displayName: 'Unknown',username: 'unknown' }
+      const userB = userBRes.data?.userInfo || { _id: d.userB, displayName: 'Unknown' ,username: 'unknown'}
 
       debtsWithUsers.push({ ...d, userA, userB })
     }
@@ -74,10 +82,11 @@ const currentDebtBalance = computed(() => {
 
 const currentDebtMessage = computed(() => {
   if (!selectedDebt.value) return ''
+
   if (currentDebtBalance.value > 0) {
-    return `You owe ${otherUser.value}: $${currentDebtBalance.value.toFixed(2)}`
+    return `You owe ${otherUser.value} (@${otherUser.value}): $${currentDebtBalance.value.toFixed(2)}`
   } else if (currentDebtBalance.value < 0) {
-    return `${otherUser.value} owes you: $${Math.abs(currentDebtBalance.value).toFixed(2)}`
+    return `${otherUser.value} (@${otherUsername.value}) owes you: $${Math.abs(currentDebtBalance.value).toFixed(2)}`
   } else {
     return `No balance between you and ${otherUser.value}`
   }
@@ -283,6 +292,7 @@ onBeforeUnmount(() => {
                 </div>
                 <div class="debt-sub muted">
                   Click to record a payment
+
                 </div>
               </div>
             </div>

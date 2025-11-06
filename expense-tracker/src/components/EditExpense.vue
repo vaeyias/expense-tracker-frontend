@@ -233,17 +233,13 @@ const deleteExpense = async () => {
       try {
         const userId = split.user._id || split.user
         const amount = split.amountOwed
-        // await axios.post('http://localhost:8000/api/Debt/updateDebt', {
-        //   payer: payer.value,
-        //   receiver: userId,
-        //   amount: -amount,
-        // })
 
         await axios.post('http://localhost:8000/api/Expense/removeUserSplit', {
           expense: props.expenseId,
           userSplit: split._id,
           token: userStore.currentUser?.token,
-          user: userStore.currentUser?._id,
+          creator: userStore.currentUser?._id,
+
 
         })
       } catch (err) {

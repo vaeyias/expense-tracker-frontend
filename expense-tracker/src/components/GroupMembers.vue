@@ -178,23 +178,12 @@ const removeUser = async (userId: string) => {
       return;
     }
 
-    const folderId = folderRes.data._id;
-
-    const res2 = await axios.post('http://localhost:8000/api/Folder/removeGroupFromFolder', {
-      user: userId,
-      folder: folderId,
-      group: props.groupId,
-    });
-
-    if (res2.data.error) {
-      errorMsg.value = res2.data.error;
-      return;
-    }
-
     const res = await axios.post('http://localhost:8000/api/Group/removeUser', {
       group: props.groupId,
       remover: userStore.currentUser?._id,
+      token: userStore.currentUser?.token,
       member: userId,
+      memberFolder: folderRes.data._id,
     });
 
     if (res.data.error) {
