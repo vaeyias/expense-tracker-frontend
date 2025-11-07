@@ -182,6 +182,7 @@ const updateExpense = async () => {
       await api.post('/api/Expense/addUserSplit', {
         expense: props.expenseId,
         user: split.userId,
+        payer: payer.value,
         amountOwed: split.amount,
         token: userStore.currentUser?.token,
         creator: userStore.currentUser?._id,

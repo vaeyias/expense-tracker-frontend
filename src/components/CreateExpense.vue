@@ -146,6 +146,7 @@ const createExpense = async () => {
     try {
       const r = await api.post('/api/Expense/addUserSplit', {
         expense: expenseId,
+        payer: payer.value,
         user: split.userId,
         creator: userStore.currentUser?._id,
         amountOwed: split.amount,
