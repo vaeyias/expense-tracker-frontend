@@ -37,7 +37,7 @@ const userSplits = ref<UserSplit[]>([])
 const loadMembers = async () => {
   try {
     const res = await api.post('/api/Group/_listMembers', { group: props.groupId })
-    const allMembers: Member[] = Array.isArray(res.data?.members) ? res.data.members : []
+    const allMembers: Member[] = Array.isArray(res.data?.members) ? res.data : []
 
     members.value = allMembers
   } catch (err) {
