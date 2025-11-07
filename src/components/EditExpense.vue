@@ -109,7 +109,7 @@ const availableMembersForSplit = (currentUserId: string) => {
 
 const addSplit = () => {
   const avail = members.value.filter((m) => !userSplits.value.map((s) => s.userId).includes(m._id))
-  userSplits.value.push({ userId: avail.length ? avail[0]._id : '', amount: null })
+  userSplits.value.push({ userId: avail.length && avail[0] ? avail[0]._id : '', amount: null })
 }
 const removeSplit = (index: number) => userSplits.value.splice(index, 1)
 

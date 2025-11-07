@@ -194,7 +194,7 @@ onMounted(async () => {
           <span class="expense-description">{{ expense.description || '-' }}</span>
           <span class="expense-payer">{{ expense.payer.displayName }}</span>
           <span class="expense-total">${{ expense.totalCost.toFixed(2) }}</span>
-          <span class="expense-youOwe" :class="{ danger: expense?.youOwe > 0 }"
+          <span class="expense-youOwe" :class="{ danger: (expense.youOwe || 0) > 0 }"
             >${{ (expense.youOwe || 0).toFixed(2) }}</span
           >
         </div>
@@ -236,7 +236,9 @@ onMounted(async () => {
       <header class="modal-header">
         <div class="modal-ident">
           <h3 class="modal-title">{{ selectedExpense?.title }}</h3>
-          <div class="modal-sub muted">{{ new Date(selectedExpense?.date).toLocaleString() }}</div>
+          <div class="modal-sub muted">
+            {{ selectedExpense?.date ? new Date(selectedExpense.date).toLocaleString() : '' }}
+          </div>
           <div class="meta-row">
             <span class="meta-pill">{{ selectedExpense?.category }}</span>
             <span class="meta-pill">Payer: {{ selectedExpense?.payer.displayName }}</span>

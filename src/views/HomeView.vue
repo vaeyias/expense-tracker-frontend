@@ -136,12 +136,15 @@ const confirmDeleteFolder = async () => {
       return
     }
 
+    if (!currentFolder.value) return
     const res2 = await api.post('/api/Folder/_getFolderById', {
       user: currentUser._id,
       folder: currentFolder.value.parent,
     })
     currentFolder.value = res2.data
-    await loadFolders(currentFolder.value._id)
+    if (currentFolder.value) {
+      await loadFolders(currentFolder.value._id)
+    }
 
     showDeleteFolderModal.value = false
     folderToDelete.value = null
@@ -166,7 +169,9 @@ const goToParent = async () => {
       folder: currentFolder.value.parent,
     })
     currentFolder.value = res.data
-    await loadFolders(currentFolder.value._id)
+    if (currentFolder.value) {
+      await loadFolders(currentFolder.value._id)
+    }
   }
 }
 
@@ -838,8 +843,8 @@ onBeforeUnmount(() => {
                         :node="child"
                         :disabledSet="descendantsOfFolderToMove"
                         v-model:selected="moveFolderTargetId"
-                        @toggle="() => loadChildrenForNode(child)"
-                        @update:selected="(val) => (moveFolderTargetId = val)"
+                        @toggle="(node: any) => loadChildrenForNode(node)"
+                        @update:selected="(val: string | null) => (moveFolderTargetId = val)"
                       />
                     </li>
                   </ul>
@@ -911,8 +916,8 @@ onBeforeUnmount(() => {
                         :node="child"
                         :disabledSet="null"
                         v-model:selected="moveGroupTargetId"
-                        @toggle="() => loadChildrenForNode(child)"
-                        @update:selected="(val) => (moveGroupTargetId = val)"
+                        @toggle="(node: any) => loadChildrenForNode(node)"
+                        @update:selected="(val: string | null) => (moveGroupTargetId = val)"
                       />
                     </li>
                   </ul>

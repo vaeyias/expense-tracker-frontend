@@ -188,7 +188,7 @@ function fireConfetti(duration = 1200) {
       confettiCtx!.save()
       confettiCtx!.translate(p.x, p.y)
       confettiCtx!.rotate(p.rot)
-      confettiCtx!.fillStyle = p.color
+      confettiCtx!.fillStyle = p.color || '#000000'
       confettiCtx!.fillRect(-p.size * 0.5, -p.size * 0.5, p.size, p.size * 0.6)
       confettiCtx!.restore()
     }
