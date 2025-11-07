@@ -1,4 +1,5 @@
 # Assignment 4b
+
 [api-spec](apiSpec.md)
 
 [final-screen-recording](final_screen_recording.mp4)
@@ -6,10 +7,11 @@
 [checkin-screen-recording](checkin_screen_recording.mp4)
 
 ## User Journey
+
 Jay and his friends are using Moni, the expense tracking website, to manage their trip expenses across multiple summer destinations. Jay starts by creating an account with a unique username and display name. On his home page, he sets up a folder called “Summer 25” to organize all of their upcoming trip groups. Inside that folder, he creates a group called “Singapore” to track expenses for their Singapore trip and adds the friends who will be joining that trip to that group. Jay logs his first expense: the hotel he paid for. He enters details such as the title, description, and total cost, and specifies each person’s share (eg. Total Cost = $300, Jay = $100, Alice = $100, Bill = $100). After creating the expense, Jay realizes he made a mistake in the description and edits it for clarity. Next, he visits his Debts page to check who owes him money. He sees that Alice and Bill each owe him $100. When Alice pays Jay back $50, and Bill (accidentally) pays him $150, Jay records these payments. The Debts page updates automatically to show that Alice still owes Jay $50, while Jay now owes Bill $50. Later, the group decides to change accommodations, so Jay deletes the original hotel expense from the Singapore group. When he checks his Debts again, he sees the balances have adjusted accordingly: now Jay owes Alice $50 and Bill $150.
 
 ## Visual Design Study
-![color](expense-tracker/src/assets/colorStudy.png)
 
+![color](/src/assets/colorStudy.png)
 
-![font](expense-tracker/src/assets/fontStudy.png)
+![font](/src/assets/fontStudy.png)
