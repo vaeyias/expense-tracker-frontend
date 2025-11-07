@@ -124,7 +124,7 @@ const createExpense = async () => {
 
   try {
     const res = await api.post('/api/Expense/createExpense', {
-      user: payer.value,
+      user: userStore.currentUser?._id,
       group: props.groupId,
       token: userStore.currentUser?.token,
     })
@@ -191,20 +191,6 @@ const createExpense = async () => {
     busy.value = false
     return
   }
-
-  // for (const split of userSplits.value) {
-  //   if (!split.userId || split.amount === null) continue;
-  //   try {
-  //     await api.post('/api/Debt/updateDebt', {
-  //       payer: payer.value,
-  //       receiver: split.userId,
-  //       amount: split.amount,
-  //       token: userStore.currentUser?.token,
-  //     });
-  //   } catch (err) {
-  //     console.error(`Error updating debt between ${payer.value} and ${split.userId}`, err);
-  //   }
-  // }
 
   busy.value = false
   emit('refresh')
