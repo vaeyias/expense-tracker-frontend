@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import axios from 'axios'
+import api from '../utils/api'
 import { useUserStore } from '../stores/user'
 const userStore = useUserStore()
 interface Member {
@@ -36,7 +36,7 @@ const userSplits = ref<UserSplit[]>([])
 /* Load members for group */
 const loadMembers = async () => {
   try {
-    const res = await axios.post('/api/Group/_listMembers', { group: props.groupId })
+    const res = await api.post('/api/Group/_listMembers', { group: props.groupId })
     const allMembers: Member[] = Array.isArray(res.data?.members) ? res.data.members : []
 
     members.value = allMembers
@@ -123,7 +123,7 @@ const createExpense = async () => {
   let expenseId: string | undefined
 
   try {
-    const res = await axios.post('/api/Expense/createExpense', {
+    const res = await api.post('/api/Expense/createExpense', {
       user: payer.value,
       group: props.groupId,
       token: userStore.currentUser?.token,
@@ -144,7 +144,7 @@ const createExpense = async () => {
   for (const split of userSplits.value) {
     if (!split.userId || split.amount === null) continue
     try {
-      const r = await axios.post('/api/Expense/addUserSplit', {
+      const r = await api.post('/api/Expense/addUserSplit', {
         expense: expenseId,
         user: split.userId,
         creator: userStore.currentUser?._id,
@@ -158,7 +158,7 @@ const createExpense = async () => {
   }
 
   try {
-    const r = await axios.post('/api/Expense/editExpense', {
+    const r = await api.post('/api/Expense/editExpense', {
       expenseToEdit: expenseId,
       title: title.value,
       description: description.value,
@@ -171,7 +171,7 @@ const createExpense = async () => {
     })
     if (r.data?.error) {
       errorMsg.value = r.data.error
-      await axios
+      await api
         .post('/api/Expense/deleteExpense', {
           expenseToDelete: expenseId,
           token: userStore.currentUser?.token,
@@ -182,7 +182,7 @@ const createExpense = async () => {
     }
   } catch (err) {
     console.error('Error editing expense', err)
-    await axios
+    await api
       .post('/api/Expense/deleteExpense', {
         expenseToDelete: expenseId,
         token: userStore.currentUser?.token,
@@ -195,7 +195,7 @@ const createExpense = async () => {
   // for (const split of userSplits.value) {
   //   if (!split.userId || split.amount === null) continue;
   //   try {
-  //     await axios.post('/api/Debt/updateDebt', {
+  //     await api.post('/api/Debt/updateDebt', {
   //       payer: payer.value,
   //       receiver: split.userId,
   //       amount: split.amount,

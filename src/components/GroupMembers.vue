@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import axios from 'axios'
+import api from '../utils/api'
 import { useUserStore } from '../stores/user'
 import { useRouter } from 'vue-router'
 
@@ -27,7 +27,7 @@ const errorMsg = ref('')
 // Check if user can be removed or leave group if they have no expenses in this group
 const canRemoveOrLeave = async (userId: string) => {
   try {
-    const res = await axios.post('/api/Expense/_getExpensesByUser', {
+    const res = await api.post('/api/Expense/_getExpensesByUser', {
       user: userId,
     })
 
@@ -46,13 +46,13 @@ const canRemoveOrLeave = async (userId: string) => {
 // Load group members
 const loadUsers = async () => {
   try {
-    const res = await axios.post('/api/Group/_listMembers', { group: props.groupId })
+    const res = await api.post('/api/Group/_listMembers', { group: props.groupId })
     const a: string[] = Array.isArray(res.data.members) ? res.data.members : []
 
     const allMembers: User[] = Array.isArray(res.data.members) ? res.data.members : []
 
     // for (const userId of memberIds) {
-    //   const userObjRes = await axios.post('/api/Authentication/_getUserById', { user: userId });
+    //   const userObjRes = await api.post('/api/Authentication/_getUserById', { user: userId });
     //   if (userObjRes.data?.userInfo) {
     //     allMembers.push(userObjRes.data.userInfo);
     //   }
@@ -79,7 +79,7 @@ const addUser = async () => {
   }
 
   try {
-    const userRes = await axios.post('/api/Authentication/_getUserByUsername', {
+    const userRes = await api.post('/api/Authentication/_getUserByUsername', {
       username: newUsername.value.toLowerCase(),
     })
     const newUserId = userRes.data.userInfo?._id
@@ -89,7 +89,7 @@ const addUser = async () => {
       return
     }
 
-    const res = await axios.post('/api/Group/addUser', {
+    const res = await api.post('/api/Group/addUser', {
       group: props.groupId,
       inviter: userStore.currentUser?._id,
       newMember: newUserId,
@@ -105,7 +105,7 @@ const addUser = async () => {
     for (const member of users.value) {
       if (member._id === newUserId) continue
       try {
-        await axios.post('/api/Debt/createDebt', {
+        await api.post('/api/Debt/createDebt', {
           userA: newUserId,
           userB: member._id,
           token: userStore.currentUser?.token,
@@ -126,7 +126,7 @@ const addUser = async () => {
 // Leave the group (current user)
 const leaveGroup = async () => {
   try {
-    const res = await axios.post('/api/Group/leaveGroup', {
+    const res = await api.post('/api/Group/leaveGroup', {
       group: props.groupId,
       member: userStore.currentUser?._id,
       token: userStore.currentUser?.token,
@@ -136,7 +136,7 @@ const leaveGroup = async () => {
       errorMsg.value = res.data.error
       return
     }
-    const folderRes = await axios.post('/api/Folder/_getFolderByGroupAndUser', {
+    const folderRes = await api.post('/api/Folder/_getFolderByGroupAndUser', {
       user: userStore.currentUser?._id,
       group: props.groupId,
     })
@@ -148,7 +148,7 @@ const leaveGroup = async () => {
 
     const folderId = folderRes.data._id
 
-    const res2 = await axios.post('/api/Folder/removeGroupFromFolder', {
+    const res2 = await api.post('/api/Folder/removeGroupFromFolder', {
       user: userStore.currentUser?._id,
       folder: folderId,
       group: props.groupId,
@@ -173,7 +173,7 @@ const leaveGroup = async () => {
 // Remove a user from the group (actual server call)
 const removeUser = async (userId: string) => {
   try {
-    const folderRes = await axios.post('/api/Folder/_getFolderByGroupAndUser', {
+    const folderRes = await api.post('/api/Folder/_getFolderByGroupAndUser', {
       user: userId,
       group: props.groupId,
     })
@@ -183,7 +183,7 @@ const removeUser = async (userId: string) => {
       return
     }
 
-    const res = await axios.post('/api/Group/removeUser', {
+    const res = await api.post('/api/Group/removeUser', {
       group: props.groupId,
       remover: userStore.currentUser?._id,
       token: userStore.currentUser?.token,

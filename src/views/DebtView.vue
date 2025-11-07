@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, onBeforeUnmount } from 'vue'
-import axios from 'axios'
+import api from '../utils/api'
 import { useUserStore } from '../stores/user'
 
 const userStore = useUserStore()
@@ -45,15 +45,15 @@ const otherUsername = computed(() => {
 const loadDebts = async () => {
   if (!currentUser.value) return
   try {
-    const res = await axios.post('/api/Debt/_listDebtsForUser', {
+    const res = await api.post('/api/Debt/_listDebtsForUser', {
       user: currentUser.value,
     })
     const rawDebts = Array.isArray(res.data) ? res.data : []
 
     const debtsWithUsers = []
     for (const d of rawDebts) {
-      const userARes = await axios.post('/api/Authentication/_getUserById', { user: d.userA })
-      const userBRes = await axios.post('/api/Authentication/_getUserById', { user: d.userB })
+      const userARes = await api.post('/api/Authentication/_getUserById', { user: d.userA })
+      const userBRes = await api.post('/api/Authentication/_getUserById', { user: d.userB })
 
       const userA = userARes.data?.userInfo || {
         _id: d.userA,
@@ -225,7 +225,7 @@ const confirmPayment = async () => {
   }
 
   try {
-    const res = await axios.post('/api/Debt/updateDebt', {
+    const res = await api.post('/api/Debt/updateDebt', {
       payer,
       receiver,
       amount: paymentAmount.value,

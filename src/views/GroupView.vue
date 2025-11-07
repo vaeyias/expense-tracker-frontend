@@ -2,7 +2,7 @@
 c:\Users\vypha\OneDrive\Documents\fall_2025\6104\expense-tracker-frontend\expense-tracker\src\views\GroupView.vue
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import axios from 'axios'
+import api from '../utils/api'
 import { useRouter } from 'vue-router'
 import GroupMembers from '../components/GroupMembers.vue'
 import CreateExpense from '../components/CreateExpense.vue'
@@ -49,7 +49,7 @@ const userSplits = ref<{ userId: string; displayName: string; amount: number }[]
 async function openExpenseModal(expense: Expense) {
   selectedExpense.value = expense
 
-  const splitsRes = await axios.post('/api/Expense/_getSplitsByExpense', {
+  const splitsRes = await api.post('/api/Expense/_getSplitsByExpense', {
     expenseId: expense._id,
   })
   const splits = Array.isArray(splitsRes.data.splits) ? splitsRes.data.splits : []
@@ -57,7 +57,7 @@ async function openExpenseModal(expense: Expense) {
   const enrichedSplits = await Promise.all(
     splits.map(async (s: any) => {
       try {
-        const userRes = await axios.post('/api/Authentication/_getUserById', {
+        const userRes = await api.post('/api/Authentication/_getUserById', {
           user: s.user?._id || s.user,
         })
         const displayName = userRes.data?.userInfo?.displayName || 'Unknown'
@@ -88,7 +88,7 @@ function closeExpenseModal() {
 
 const loadGroup = async () => {
   try {
-    const res = await axios.post('/api/Group/_getGroup', { group: props.groupId })
+    const res = await api.post('/api/Group/_getGroup', { group: props.groupId })
     group.value = res.data
   } catch (err) {
     console.error(err)
@@ -97,14 +97,14 @@ const loadGroup = async () => {
 
 const loadExpenses = async () => {
   try {
-    const res = await axios.post('/api/Expense/_getExpensesByGroup', { group: props.groupId })
+    const res = await api.post('/api/Expense/_getExpensesByGroup', { group: props.groupId })
     const rawExpenses: any[] = res.data || []
 
     const expensesWithPayer: Expense[] = []
     for (const e of rawExpenses) {
       let payer = { _id: e.payer, displayName: 'Unknown' }
       try {
-        const userRes = await axios.post('/api/Authentication/_getUserById', { user: e.payer })
+        const userRes = await api.post('/api/Authentication/_getUserById', { user: e.payer })
         if (userRes.data?.userInfo) {
           payer = userRes.data.userInfo
         }
@@ -114,7 +114,7 @@ const loadExpenses = async () => {
 
       let youOwe = 0
       try {
-        const splitRes = await axios.post('/api/Expense/_getSplitForExpense', {
+        const splitRes = await api.post('/api/Expense/_getSplitForExpense', {
           expenseId: e._id,
           user: currentUser.value,
         })

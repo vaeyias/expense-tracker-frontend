@@ -3,7 +3,7 @@ c:\Users\vypha\OneDrive\Documents\fall_2025\6104\expense-tracker-frontend\expens
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import api from '../utils/api'
 import { useUserStore } from '../stores/user'
 const userStore = useUserStore()
 
@@ -27,7 +27,7 @@ const saveDisplayName = async () => {
   }
 
   try {
-    const res = await axios.post('/api/Authentication/editUser', {
+    const res = await api.post('/api/Authentication/editUser', {
       user: currentUser._id,
       token: currentUser.token,
       newDisplayName: displayName.value,
@@ -63,7 +63,7 @@ const saveDisplayName = async () => {
 const logout = async () => {
   localStorage.removeItem('currentUser')
   userStore.clearUser()
-  await axios.post('/api/Authentication/logout', {
+  await api.post('/api/Authentication/logout', {
     user: currentUser._id,
     token: currentUser.token,
   })

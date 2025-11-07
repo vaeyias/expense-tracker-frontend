@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import axios from 'axios'
+import api from '../utils/api'
 import { useUserStore } from '../stores/user'
 const userStore = useUserStore()
 
@@ -42,7 +42,7 @@ const showDeleteConfirm = ref(false)
 /* Load members */
 const loadMembers = async () => {
   try {
-    const res = await axios.post('/api/Group/_listMembers', { group: props.groupId })
+    const res = await api.post('/api/Group/_listMembers', { group: props.groupId })
     const allMembers: Member[] = Array.isArray(res.data?.members) ? res.data.members : []
 
     members.value = allMembers.filter(Boolean)
@@ -55,7 +55,7 @@ const loadMembers = async () => {
 /* Load expense + splits */
 const loadExpense = async () => {
   try {
-    const res = await axios.post('/api/Expense/_getExpenseById', {
+    const res = await api.post('/api/Expense/_getExpenseById', {
       expenseId: props.expenseId,
     })
     const data = Array.isArray(res.data) ? res.data[0] : res.data
@@ -70,7 +70,7 @@ const loadExpense = async () => {
     payer.value = (data?.payer && (data.payer._id || data.payer)) || ''
 
     // load splits
-    const splitsRes = await axios.post('/api/Expense/_getSplitsByExpense', {
+    const splitsRes = await api.post('/api/Expense/_getSplitsByExpense', {
       expenseId: props.expenseId,
     })
     const splits = Array.isArray(splitsRes.data.splits) ? splitsRes.data.splits : []
@@ -146,7 +146,7 @@ const updateExpense = async () => {
   busy.value = true
   try {
     // Get old splits
-    const oldSplitsRes = await axios.post('/api/Expense/_getSplitsByExpense', {
+    const oldSplitsRes = await api.post('/api/Expense/_getSplitsByExpense', {
       expenseId: props.expenseId,
     })
     const oldSplits = Array.isArray(oldSplitsRes.data.splits) ? oldSplitsRes.data.splits : []
@@ -156,7 +156,7 @@ const updateExpense = async () => {
     //   try {
     //     const userId = split.user._id || split.user
     //     const amount = split.amountOwed
-    //     await axios.post('/api/Debt/updateDebt', {
+    //     await api.post('/api/Debt/updateDebt', {
     //       payer: payer.value,
     //       receiver: userId,
     //       amount: -amount,
@@ -168,7 +168,7 @@ const updateExpense = async () => {
 
     // Remove old splits
     for (const split of oldSplits) {
-      await axios.post('/api/Expense/removeUserSplit', {
+      await api.post('/api/Expense/removeUserSplit', {
         expense: props.expenseId,
         userSplit: split._id,
         creator: userStore.currentUser?._id,
@@ -179,7 +179,7 @@ const updateExpense = async () => {
     // Add new splits and update debts
     for (const split of userSplits.value) {
       if (!split.userId || split.amount === null) continue
-      await axios.post('/api/Expense/addUserSplit', {
+      await api.post('/api/Expense/addUserSplit', {
         expense: props.expenseId,
         user: split.userId,
         amountOwed: split.amount,
@@ -187,7 +187,7 @@ const updateExpense = async () => {
         creator: userStore.currentUser?._id,
       })
       //   try {
-      // await axios.post('/api/Debt/updateDebt', {
+      // await api.post('/api/Debt/updateDebt', {
       //   payer: payer.value,
       //   receiver: split.userId,
       //   amount: split.amount,
@@ -198,7 +198,7 @@ const updateExpense = async () => {
     }
 
     // Update expense details
-    const res = await axios.post('/api/Expense/editExpense', {
+    const res = await api.post('/api/Expense/editExpense', {
       expenseToEdit: props.expenseId,
       title: title.value,
       description: description.value,
@@ -228,7 +228,7 @@ const updateExpense = async () => {
 /* Delete expense (preserve existing) */
 const deleteExpense = async () => {
   try {
-    const splitsRes = await axios.post('/api/Expense/_getSplitsByExpense', {
+    const splitsRes = await api.post('/api/Expense/_getSplitsByExpense', {
       expenseId: props.expenseId,
     })
     const splits = Array.isArray(splitsRes.data.splits) ? splitsRes.data.splits : []
@@ -238,7 +238,7 @@ const deleteExpense = async () => {
         const userId = split.user._id || split.user
         const amount = split.amountOwed
 
-        await axios.post('/api/Expense/removeUserSplit', {
+        await api.post('/api/Expense/removeUserSplit', {
           expense: props.expenseId,
           userSplit: split._id,
           token: userStore.currentUser?.token,
@@ -249,7 +249,7 @@ const deleteExpense = async () => {
       }
     }
 
-    const res = await axios.post('/api/Expense/deleteExpense', {
+    const res = await api.post('/api/Expense/deleteExpense', {
       expenseToDelete: props.expenseId,
       token: userStore.currentUser?.token,
       user: userStore.currentUser?._id,

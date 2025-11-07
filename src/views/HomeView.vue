@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
-import axios from 'axios'
+import api from '../utils/api'
 import FolderIcon from '../components/FolderIcon.vue'
 import GroupIcon from '../components/GroupIcon.vue'
 import { useRouter } from 'vue-router'
@@ -76,26 +76,26 @@ const loadFolders = async (folderId: string | null = null) => {
   try {
     let res
     if (!folderId) {
-      res = await axios.post('/api/Folder/getRootFolder', {
+      res = await api.post('/api/Folder/getRootFolder', {
         user: currentUser._id,
       })
       currentFolder.value = null
     } else {
-      res = await axios.post('/api/Folder/listSubfolders', {
+      res = await api.post('/api/Folder/listSubfolders', {
         user: currentUser._id,
         parent: folderId,
       })
     }
     folders.value = res.data || []
 
-    let groupRes = []
+    let groupRes
     if (folderId) {
-      groupRes = await axios.post('/api/Folder/_listGroupsInFolder', {
+      groupRes = await api.post('/api/Folder/_listGroupsInFolder', {
         user: currentUser._id,
         folder: folderId,
       })
     } else {
-      groupRes = await axios.post('/api/Folder/_listGroupsInFolderByName', {
+      groupRes = await api.post('/api/Folder/_listGroupsInFolderByName', {
         user: currentUser._id,
         name: '.root',
       })
@@ -105,7 +105,7 @@ const loadFolders = async (folderId: string | null = null) => {
     const fullGroups: Group[] = []
 
     for (const groupId of groupIds) {
-      const groupObjRes = await axios.post('/api/Group/_getGroup', {
+      const groupObjRes = await api.post('/api/Group/_getGroup', {
         group: groupId,
       })
       if (groupObjRes.data) fullGroups.push(groupObjRes.data)
@@ -125,7 +125,7 @@ const confirmDeleteFolder = async () => {
   if (!folderToDelete.value) return
 
   try {
-    const res = await axios.post('/api/Folder/deleteFolder', {
+    const res = await api.post('/api/Folder/deleteFolder', {
       user: currentUser?._id,
       folder: folderToDelete.value._id,
       token: currentUser.token,
@@ -136,7 +136,7 @@ const confirmDeleteFolder = async () => {
       return
     }
 
-    const res2 = await axios.post('/api/Folder/_getFolderById', {
+    const res2 = await api.post('/api/Folder/_getFolderById', {
       user: currentUser._id,
       folder: currentFolder.value.parent,
     })
@@ -161,7 +161,7 @@ const goToParent = async () => {
     currentFolder.value = null
     await loadFolders(null)
   } else {
-    const res = await axios.post('/api/Folder/_getFolderById', {
+    const res = await api.post('/api/Folder/_getFolderById', {
       user: currentUser._id,
       folder: currentFolder.value.parent,
     })
@@ -177,7 +177,7 @@ const createFolder = async () => {
     return
   }
   try {
-    const res = await axios.post('/api/Folder/createFolder', {
+    const res = await api.post('/api/Folder/createFolder', {
       owner: currentUser._id,
       parent: currentFolder.value?._id || null,
       name: newFolderName.value,
@@ -207,7 +207,7 @@ const renameFolderConfirm = async () => {
   if (!folderToRename.value || !renameFolderName.value.trim()) return
 
   try {
-    const res = await axios.post('/api/Folder/renameFolder', {
+    const res = await api.post('/api/Folder/renameFolder', {
       user: currentUser?._id,
       folder: folderToRename.value._id,
       name: renameFolderName.value.trim(),
@@ -255,7 +255,7 @@ const createGroupConfirm = async () => {
   }
 
   try {
-    const res = await axios.post('/api/Group/createGroup', {
+    const res = await api.post('/api/Group/createGroup', {
       creator: currentUser?._id,
       name: newGroupName.value.trim(),
       description: newGroupDescription.value.trim(),
@@ -287,7 +287,7 @@ const createGroupConfirm = async () => {
 const loadRootTree = async () => {
   if (!currentUser) return
   try {
-    const res = await axios.post('/api/Folder/getRootFolder', {
+    const res = await api.post('/api/Folder/getRootFolder', {
       user: currentUser._id,
       token: currentUser.token,
     })
@@ -301,7 +301,7 @@ const loadRootTree = async () => {
     // recursively load all children for each root node (depth-first)
     const fetchChildrenRecursively = async (node: FolderNode) => {
       try {
-        const r = await axios.post('/api/Folder/listSubfolders', {
+        const r = await api.post('/api/Folder/listSubfolders', {
           user: currentUser._id,
           parent: node._id,
           token: currentUser.token,
@@ -338,7 +338,7 @@ const loadChildrenForNode = async (node: FolderNode) => {
     return
   }
   try {
-    const res = await axios.post('/api/Folder/listSubfolders', {
+    const res = await api.post('/api/Folder/listSubfolders', {
       user: currentUser._id,
       parent: node._id,
       token: currentUser.token,
@@ -360,7 +360,7 @@ const fetchDescendants = async (folderId: string | null) => {
   while (stack.length) {
     const id = stack.pop()!
     try {
-      const res = await axios.post('/api/Folder/listSubfolders', {
+      const res = await api.post('/api/Folder/listSubfolders', {
         user: currentUser?._id,
         parent: id,
         token: currentUser.token,
@@ -403,7 +403,7 @@ const moveFolderConfirm = async () => {
       newParent: moveFolderTargetId.value, // can be null for root
       token: currentUser.token,
     }
-    const res = await axios.post('/api/Folder/moveFolder', payload)
+    const res = await api.post('/api/Folder/moveFolder', payload)
     if (res.data?.error) {
       errorMsg.value = res.data.error
       return
@@ -442,7 +442,7 @@ const moveGroupConfirm = async () => {
       targetFolderName = '.root'
     } else {
       // find target folder by id (for folderName)
-      const folderRes = await axios.post('/api/Folder/_getFolderById', {
+      const folderRes = await api.post('/api/Folder/_getFolderById', {
         user: currentUser?._id,
         folder: moveGroupTargetId.value,
         token: currentUser.token,
@@ -456,14 +456,14 @@ const moveGroupConfirm = async () => {
     }
 
     // remove from source folder (if we have a current folder id) else root
-    const rootFolderRes = await axios.post('/api/Folder/_getRootId', {
+    const rootFolderRes = await api.post('/api/Folder/_getRootId', {
       user: currentUser._id,
       token: currentUser.token,
     })
 
     if (!currentFolder.value) {
       // source is root
-      await axios.post('/api/Folder/removeGroupFromFolder', {
+      await api.post('/api/Folder/removeGroupFromFolder', {
         user: currentUser?._id,
         folder: rootFolderRes.data[0]._id,
         group: groupToMoveForModal.value._id,
@@ -471,7 +471,7 @@ const moveGroupConfirm = async () => {
       })
     } else {
       // source is current folder
-      await axios.post('/api/Folder/removeGroupFromFolder', {
+      await api.post('/api/Folder/removeGroupFromFolder', {
         user: currentUser?._id,
         folder: currentFolder.value._id,
         group: groupToMoveForModal.value._id,
@@ -480,7 +480,7 @@ const moveGroupConfirm = async () => {
     }
 
     // add to target folder
-    await axios.post('/api/Folder/addGroupToFolder', {
+    await api.post('/api/Folder/addGroupToFolder', {
       user: currentUser?._id,
       folderName: targetFolderName,
       group: groupToMoveForModal.value._id,

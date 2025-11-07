@@ -66,7 +66,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import api from '../utils/api'
 import { useUserStore } from '../stores/user'
 
 const userStore = useUserStore()
@@ -85,7 +85,7 @@ const createAccount = async () => {
 
   try {
     // Step 1: create user
-    const createRes = await axios.post('/api/Authentication/createUser', {
+    const createRes = await api.post('/api/Authentication/createUser', {
       username: username.value.toLowerCase(),
       displayName: displayName.value,
       password: password.value,
@@ -97,7 +97,7 @@ const createAccount = async () => {
     }
 
     // Step 2: authenticate to get token
-    const authRes = await axios.post('/api/Authentication/authenticate', {
+    const authRes = await api.post('/api/Authentication/authenticate', {
       username: username.value.toLowerCase(),
       password: password.value,
     })
