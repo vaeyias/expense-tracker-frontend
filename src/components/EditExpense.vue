@@ -4,6 +4,12 @@ import api from '../utils/api'
 import { useUserStore } from '../stores/user'
 const userStore = useUserStore()
 
+interface User {
+  _id: string
+  username: string
+  displayName: string
+}
+
 interface Member {
   _id: string
   displayName: string
@@ -43,10 +49,20 @@ const showDeleteConfirm = ref(false)
 const loadMembers = async () => {
   try {
     const res = await api.post('/api/Group/_listMembers', { group: props.groupId })
-    const allMembers: Member[] = Array.isArray(res.data?.members) ? res.data.members : []
+    const memberIds: string[] = Array.isArray(res.data) ? res.data : []
 
-    members.value = allMembers.filter(Boolean)
-    console.log('members loaded', members.value)
+    const allMembers: Member[] = []
+
+    for (const userId of memberIds) {
+      const userObjRes = await api.post('/api/Authentication/_getUserById', { user: userId })
+      if (userObjRes.data?.userInfo) {
+        allMembers.push({
+          _id: userObjRes.data.userInfo._id,
+          displayName: userObjRes.data.userInfo.displayName,
+        })
+      }
+    }
+    members.value = allMembers
   } catch (err) {
     console.error('Error loading members', err)
   }

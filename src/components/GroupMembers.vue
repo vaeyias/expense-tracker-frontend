@@ -47,16 +47,17 @@ const canRemoveOrLeave = async (userId: string) => {
 const loadUsers = async () => {
   try {
     const res = await api.post('/api/Group/_listMembers', { group: props.groupId })
-    const a: string[] = Array.isArray(res.data.members) ? res.data.members : []
 
-    const allMembers: User[] = Array.isArray(res.data.members) ? res.data.members : []
+    const memberIds: string[] = Array.isArray(res.data) ? res.data : []
 
-    // for (const userId of memberIds) {
-    //   const userObjRes = await api.post('/api/Authentication/_getUserById', { user: userId });
-    //   if (userObjRes.data?.userInfo) {
-    //     allMembers.push(userObjRes.data.userInfo);
-    //   }
-    // }
+    const allMembers: User[] = []
+
+    for (const userId of memberIds) {
+      const userObjRes = await api.post('/api/Authentication/_getUserById', { user: userId })
+      if (userObjRes.data?.userInfo) {
+        allMembers.push(userObjRes.data.userInfo)
+      }
+    }
 
     // Compute allowedToLeave after fetching all user data
     users.value = await Promise.all(

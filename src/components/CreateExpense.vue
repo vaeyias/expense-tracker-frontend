@@ -3,6 +3,11 @@ import { ref, onMounted, computed } from 'vue'
 import api from '../utils/api'
 import { useUserStore } from '../stores/user'
 const userStore = useUserStore()
+interface User {
+  _id: string
+  username: string
+  displayName: string
+}
 interface Member {
   _id: string
   displayName: string
@@ -37,8 +42,17 @@ const userSplits = ref<UserSplit[]>([])
 const loadMembers = async () => {
   try {
     const res = await api.post('/api/Group/_listMembers', { group: props.groupId })
-    const allMembers: Member[] = Array.isArray(res.data) ? res.data : []
+    console.log(res)
+    const memberIds: string[] = Array.isArray(res.data) ? res.data : []
 
+    const allMembers: Member[] = []
+
+    for (const userId of memberIds) {
+      const userObjRes = await api.post('/api/Authentication/_getUserById', { user: userId })
+      if (userObjRes.data?.userInfo) {
+        allMembers.push(userObjRes.data.userInfo)
+      }
+    }
     members.value = allMembers
   } catch (err) {
     console.error('Error loading members', err)

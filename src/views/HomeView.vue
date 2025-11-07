@@ -298,7 +298,7 @@ const loadRootTree = async () => {
     })
     const data: Folder[] = res.data || []
 
-    console.log(res.data)
+    // console.log(res.data)
 
     // create nodes and mark as loaded (we will populate children recursively)
     folderTree.value = data.map((f) => ({ ...f, children: [], expanded: false, loaded: true }))
