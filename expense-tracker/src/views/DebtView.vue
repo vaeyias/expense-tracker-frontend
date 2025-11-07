@@ -84,7 +84,7 @@ const currentDebtMessage = computed(() => {
   if (!selectedDebt.value) return ''
 
   if (currentDebtBalance.value > 0) {
-    return `You owe ${otherUser.value} (@${otherUser.value}): $${currentDebtBalance.value.toFixed(2)}`
+    return `You owe ${otherUser.value} (@${otherUsername.value}): $${currentDebtBalance.value.toFixed(2)}`
   } else if (currentDebtBalance.value < 0) {
     return `${otherUser.value} (@${otherUsername.value}) owes you: $${Math.abs(currentDebtBalance.value).toFixed(2)}`
   } else {

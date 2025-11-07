@@ -252,7 +252,7 @@ const openGroupModal = () => {
 
 const createGroupConfirm = async () => {
   if (!newGroupName.value.trim()) {
-    groupErrorMsg.value = 'Group name cannot be empty.';
+    groupErrorMsg.value = 'Please enter a group name.';
     return;
   }
 

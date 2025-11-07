@@ -105,7 +105,7 @@ const addUser = async () => {
     for (const member of users.value) {
       if (member._id === newUserId) continue;
       try {
-        await axios.post('http://localhost:8000/api/Debt/createDebt', { userA: newUserId, userB: member._id,token: userStore.currentUser?.token  ,user: userStore.currentUser?._id  });
+        await axios.post('http://localhost:8000/api/Debt/createDebt', { userA: newUserId, userB: member._id, token: userStore.currentUser?.token  ,user: userStore.currentUser?._id  });
       } catch {}
     }
 
