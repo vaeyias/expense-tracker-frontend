@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
-import { useUserStore } from '../stores/user';
-const userStore = useUserStore();
+import { useUserStore } from '../stores/user'
+const userStore = useUserStore()
 
 interface Member {
   _id: string
@@ -39,12 +39,11 @@ const userSplits = ref<UserSplit[]>([])
 
 const showDeleteConfirm = ref(false)
 
-
 /* Load members */
 const loadMembers = async () => {
   try {
-    const res = await axios.post('http://localhost:8000/api/Group/_listMembers', { group: props.groupId });
-    const allMembers: Member[] = Array.isArray(res.data?.members) ? res.data.members : [];
+    const res = await axios.post('/api/Group/_listMembers', { group: props.groupId })
+    const allMembers: Member[] = Array.isArray(res.data?.members) ? res.data.members : []
 
     members.value = allMembers.filter(Boolean)
     console.log('members loaded', members.value)
@@ -56,27 +55,29 @@ const loadMembers = async () => {
 /* Load expense + splits */
 const loadExpense = async () => {
   try {
-    const res = await axios.post('http://localhost:8000/api/Expense/_getExpenseById', {
-      expenseId: props.expenseId
+    const res = await axios.post('/api/Expense/_getExpenseById', {
+      expenseId: props.expenseId,
     })
     const data = Array.isArray(res.data) ? res.data[0] : res.data
 
     title.value = data?.title || ''
     description.value = data?.description || ''
     category.value = data?.category || ''
-    date.value = data?.date ? new Date(data.date).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10)
+    date.value = data?.date
+      ? new Date(data.date).toISOString().slice(0, 10)
+      : new Date().toISOString().slice(0, 10)
     totalCost.value = data?.totalCost || null
     payer.value = (data?.payer && (data.payer._id || data.payer)) || ''
 
     // load splits
-    const splitsRes = await axios.post('http://localhost:8000/api/Expense/_getSplitsByExpense', {
-      expenseId: props.expenseId
+    const splitsRes = await axios.post('/api/Expense/_getSplitsByExpense', {
+      expenseId: props.expenseId,
     })
     const splits = Array.isArray(splitsRes.data.splits) ? splitsRes.data.splits : []
     console.log('splits loaded', splits)
     userSplits.value = splits.map((s: any) => ({
       userId: s.user?._id || s.user,
-      amount: s.amountOwed
+      amount: s.amountOwed,
     }))
 
     console.log('userSplits', userSplits.value)
@@ -91,7 +92,9 @@ onMounted(async () => {
 })
 
 /* Helpers/validation */
-const sumOfSplits = computed(() => userSplits.value.reduce((acc, s) => acc + (Number(s.amount) || 0), 0))
+const sumOfSplits = computed(() =>
+  userSplits.value.reduce((acc, s) => acc + (Number(s.amount) || 0), 0),
+)
 const splitMismatch = computed(() => {
   if (totalCost.value === null || Number.isNaN(totalCost.value)) return false
   return Number(totalCost.value) !== Number(Number(sumOfSplits.value).toFixed(2))
@@ -99,20 +102,22 @@ const splitMismatch = computed(() => {
 
 /* allow current split's selected user to remain visible */
 const availableMembersForSplit = (currentUserId: string) => {
-  const selectedIds = userSplits.value.map(s => s.userId).filter(Boolean)
+  const selectedIds = userSplits.value.map((s) => s.userId).filter(Boolean)
   console.log('selectedIds', selectedIds)
-  return members.value.filter(m => !selectedIds.includes(m._id) || m._id === currentUserId)
+  return members.value.filter((m) => !selectedIds.includes(m._id) || m._id === currentUserId)
 }
 
 const addSplit = () => {
-  const avail = members.value.filter(m => !userSplits.value.map(s => s.userId).includes(m._id))
+  const avail = members.value.filter((m) => !userSplits.value.map((s) => s.userId).includes(m._id))
   userSplits.value.push({ userId: avail.length ? avail[0]._id : '', amount: null })
 }
 const removeSplit = (index: number) => userSplits.value.splice(index, 1)
 
 /* split equal helper (mirrors CreateExpense behaviour) */
 function splitEqually(useAll = true) {
-  const targets = useAll ? members.value.map(m => m._id) : members.value.filter(m => m._id !== payer.value).map(m => m._id)
+  const targets = useAll
+    ? members.value.map((m) => m._id)
+    : members.value.filter((m) => m._id !== payer.value).map((m) => m._id)
   if (!targets.length || !totalCost.value || totalCost.value <= 0) return
 
   const base = Math.floor((totalCost.value / targets.length) * 100) / 100
@@ -141,8 +146,8 @@ const updateExpense = async () => {
   busy.value = true
   try {
     // Get old splits
-    const oldSplitsRes = await axios.post('http://localhost:8000/api/Expense/_getSplitsByExpense', {
-      expenseId: props.expenseId
+    const oldSplitsRes = await axios.post('/api/Expense/_getSplitsByExpense', {
+      expenseId: props.expenseId,
     })
     const oldSplits = Array.isArray(oldSplitsRes.data.splits) ? oldSplitsRes.data.splits : []
 
@@ -151,7 +156,7 @@ const updateExpense = async () => {
     //   try {
     //     const userId = split.user._id || split.user
     //     const amount = split.amountOwed
-    //     await axios.post('http://localhost:8000/api/Debt/updateDebt', {
+    //     await axios.post('/api/Debt/updateDebt', {
     //       payer: payer.value,
     //       receiver: userId,
     //       amount: -amount,
@@ -163,10 +168,10 @@ const updateExpense = async () => {
 
     // Remove old splits
     for (const split of oldSplits) {
-      await axios.post('http://localhost:8000/api/Expense/removeUserSplit', {
+      await axios.post('/api/Expense/removeUserSplit', {
         expense: props.expenseId,
         userSplit: split._id,
-        creator:userStore.currentUser?._id,
+        creator: userStore.currentUser?._id,
         token: userStore.currentUser?.token,
       })
     }
@@ -174,26 +179,26 @@ const updateExpense = async () => {
     // Add new splits and update debts
     for (const split of userSplits.value) {
       if (!split.userId || split.amount === null) continue
-      await axios.post('http://localhost:8000/api/Expense/addUserSplit', {
+      await axios.post('/api/Expense/addUserSplit', {
         expense: props.expenseId,
         user: split.userId,
         amountOwed: split.amount,
         token: userStore.currentUser?.token,
-        creator:userStore.currentUser?._id,
+        creator: userStore.currentUser?._id,
       })
-    //   try {
-        // await axios.post('http://localhost:8000/api/Debt/updateDebt', {
-        //   payer: payer.value,
-        //   receiver: split.userId,
-        //   amount: split.amount,
-        // })
-    //   } catch (err) {
-    //     console.error(`Error updating debt for ${split.userId}`, err)
-    //   }
+      //   try {
+      // await axios.post('/api/Debt/updateDebt', {
+      //   payer: payer.value,
+      //   receiver: split.userId,
+      //   amount: split.amount,
+      // })
+      //   } catch (err) {
+      //     console.error(`Error updating debt for ${split.userId}`, err)
+      //   }
     }
 
     // Update expense details
-    const res = await axios.post('http://localhost:8000/api/Expense/editExpense', {
+    const res = await axios.post('/api/Expense/editExpense', {
       expenseToEdit: props.expenseId,
       title: title.value,
       description: description.value,
@@ -222,10 +227,9 @@ const updateExpense = async () => {
 
 /* Delete expense (preserve existing) */
 const deleteExpense = async () => {
-
   try {
-    const splitsRes = await axios.post('http://localhost:8000/api/Expense/_getSplitsByExpense', {
-      expenseId: props.expenseId
+    const splitsRes = await axios.post('/api/Expense/_getSplitsByExpense', {
+      expenseId: props.expenseId,
     })
     const splits = Array.isArray(splitsRes.data.splits) ? splitsRes.data.splits : []
 
@@ -234,20 +238,18 @@ const deleteExpense = async () => {
         const userId = split.user._id || split.user
         const amount = split.amountOwed
 
-        await axios.post('http://localhost:8000/api/Expense/removeUserSplit', {
+        await axios.post('/api/Expense/removeUserSplit', {
           expense: props.expenseId,
           userSplit: split._id,
           token: userStore.currentUser?.token,
           creator: userStore.currentUser?._id,
-
-
         })
       } catch (err) {
         console.error(`Error reversing debt for ${split.user?._id || split.user}`, err)
       }
     }
 
-    const res = await axios.post('http://localhost:8000/api/Expense/deleteExpense', {
+    const res = await axios.post('/api/Expense/deleteExpense', {
       expenseToDelete: props.expenseId,
       token: userStore.currentUser?.token,
       user: userStore.currentUser?._id,
@@ -268,7 +270,6 @@ const confirmDelete = async () => {
   showDeleteConfirm.value = false
   await deleteExpense() // call your existing deleteExpense function
 }
-
 </script>
 
 <template>
@@ -278,112 +279,151 @@ const confirmDelete = async () => {
         <div>
           <h3 class="modal-title">Edit Expense</h3>
           <div class="muted small">Edit details and participant splits</div>
-
-
         </div>
         <button class="btn danger" @click="showDeleteConfirm = true">Delete</button>
       </header>
-              <div class="modal-body">
+      <div class="modal-body">
+        <section class="form-grid">
+          <div class="field">
+            <label class="label">Title</label>
+            <input class="title-input" v-model="title" placeholder="Dinner, utilities, gift..." />
+          </div>
 
+          <div class="field">
+            <label class="label">Category</label>
+            <input
+              class="category-input"
+              v-model="category"
+              placeholder="Category (e.g. Food, Travel)"
+            />
+          </div>
 
-      <section class="form-grid">
-        <div class="field">
-          <label class="label">Title</label>
-          <input class="title-input" v-model="title" placeholder="Dinner, utilities, gift..." />
-        </div>
+          <div class="field">
+            <label class="label">Date</label>
+            <input type="date" v-model="date" />
+          </div>
 
-        <div class="field">
-          <label class="label">Category</label>
-          <input class="category-input" v-model="category" placeholder="Category (e.g. Food, Travel)" />
-        </div>
+          <div class="field">
+            <label class="label">Total Cost</label>
+            <input
+              type="number"
+              v-model.number="totalCost"
+              min="0"
+              step="0.01"
+              placeholder="0.00"
+            />
+          </div>
 
-        <div class="field">
-          <label class="label">Date</label>
-          <input type="date" v-model="date" />
-        </div>
+          <div class="field wide">
+            <label class="label">Payer</label>
+            <select v-model="payer">
+              <option value="">Select payer</option>
+              <option v-for="m in members" :key="m._id" :value="m._id">
+                {{ m.displayName }}
+              </option>
+            </select>
+          </div>
 
-        <div class="field">
-          <label class="label">Total Cost</label>
-          <input type="number" v-model.number="totalCost" min="0" step="0.01" placeholder="0.00" />
-        </div>
+          <div class="field full">
+            <label class="label">Description (optional)</label>
+            <textarea
+              class="desc"
+              v-model="description"
+              rows="3"
+              placeholder="Add notes about this expense"
+            ></textarea>
+          </div>
+        </section>
 
-        <div class="field wide">
-          <label class="label">Payer</label>
-          <select v-model="payer">
-          <option value="">Select payer</option>
-            <option v-for="m in members" :key="m._id" :value="m._id">
-              {{ m.displayName }}
-            </option>
-          </select>
-        </div>
+        <section class="splits">
+          <div class="splits-head">
+            <h4 class="h4">User Splits</h4>
+            <div class="splits-tools">
+              <div class="">
+                Sum: <strong :class="{ warn: splitMismatch }">${{ sumOfSplits.toFixed(2) }}</strong>
+              </div>
 
-        <div class="field full">
-          <label class="label">Description (optional)</label>
-          <textarea class ="desc" v-model="description" rows="3" placeholder="Add notes about this expense"></textarea>
-        </div>
-      </section>
+              <div class="split-buttons">
+                <button
+                  class="btn cancel"
+                  @click="splitEqually(true)"
+                  title="Split equally among all members"
+                >
+                  Split equally (all)
+                </button>
+                <button
+                  class="btn cancel"
+                  @click="splitEqually(false)"
+                  title="Split equally among everyone except payer"
+                >
+                  Split (except payer)
+                </button>
+              </div>
 
-      <section class="splits">
-        <div class="splits-head">
-          <h4 class="h4">User Splits</h4>
-          <div class="splits-tools">
-            <div class="">Sum: <strong :class="{ warn: splitMismatch }">${{ sumOfSplits.toFixed(2) }}</strong></div>
+              <button class="btn" @click="addSplit">+ Add split</button>
+            </div>
+          </div>
 
-            <div class="split-buttons">
-              <button class="btn cancel" @click="splitEqually(true)" title="Split equally among all members">Split equally (all)</button>
-              <button class="btn cancel" @click="splitEqually(false)" title="Split equally among everyone except payer">Split (except payer)</button>
+          <div class="splits-list">
+            <div v-if="!userSplits.length" class="muted">
+              No splits yet — click "Split equally" or add a user split.
             </div>
 
-            <button class="btn" @click="addSplit">+ Add split</button>
+            <div v-for="(split, i) in userSplits" :key="i" class="split-row">
+              <select v-model="split.userId">
+                <option value="">Select user</option>
+                <option
+                  style="background-color: var(--brand-deep)"
+                  v-for="m in availableMembersForSplit(split.userId)"
+                  :key="m._id"
+                  :value="m._id"
+                >
+                  {{ m.displayName }}
+                </option>
+              </select>
+
+              <input
+                type="number"
+                v-model.number="split.amount"
+                min="0"
+                step="0.01"
+                placeholder="Amount"
+              />
+
+              <button class="btn remove" @click="removeSplit(i)">Remove</button>
+            </div>
           </div>
-        </div>
+        </section>
 
-        <div class="splits-list">
-          <div v-if="!userSplits.length" class="muted">No splits yet — click "Split equally" or add a user split.</div>
-
-          <div v-for="(split, i) in userSplits" :key="i" class="split-row">
-            <select v-model="split.userId">
-              <option value="">Select user</option>
-              <option style="background-color: var(--brand-deep);" v-for="m in availableMembersForSplit(split.userId)" :key="m._id" :value="m._id">{{ m.displayName }}</option>
-            </select>
-
-            <input type="number" v-model.number="split.amount" min="0" step="0.01" placeholder="Amount" />
-
-            <button class="btn remove" @click="removeSplit(i)">Remove</button>
-          </div>
-        </div>
-      </section>
-
-      <p class="error" v-if="errorMsg">{{ errorMsg }}</p>
+        <p class="error" v-if="errorMsg">{{ errorMsg }}</p>
       </div>
 
       <footer class="modal-foot">
         <div class="foot-actions">
           <button class="btn cancel" @click="emit('close')">Cancel</button>
-          <button class="btn" :disabled="busy" @click="updateExpense">{{ busy ? 'Saving...' : 'Save' }}</button>
+          <button class="btn" :disabled="busy" @click="updateExpense">
+            {{ busy ? 'Saving...' : 'Save' }}
+          </button>
         </div>
       </footer>
-        <div v-if="showDeleteConfirm" class="modal-overlay" role="dialog" aria-modal="true">
-  <div class="modal-card-confirm">
-    <header class="modal-head">
-      <h3 class="modal-title">Confirm Delete</h3>
-    </header>
-    <div class="modal-body" style="text-align:center;">
-      <p>Are you sure you want to delete this expense?</p>
-    </div>
-    <footer class="modal-foot">
-      <div class="foot-actions">
-        <button class="btn cancel" @click="showDeleteConfirm = false">Cancel</button>
-        <button class="btn danger" @click="confirmDelete">Delete</button>
+      <div v-if="showDeleteConfirm" class="modal-overlay" role="dialog" aria-modal="true">
+        <div class="modal-card-confirm">
+          <header class="modal-head">
+            <h3 class="modal-title">Confirm Delete</h3>
+          </header>
+          <div class="modal-body" style="text-align: center">
+            <p>Are you sure you want to delete this expense?</p>
+          </div>
+          <footer class="modal-foot">
+            <div class="foot-actions">
+              <button class="btn cancel" @click="showDeleteConfirm = false">Cancel</button>
+              <button class="btn danger" @click="confirmDelete">Delete</button>
+            </div>
+          </footer>
+        </div>
       </div>
-    </footer>
-  </div>
-
     </div>
-
   </div>
-</div>
-
 </template>
 
 <style scoped>
@@ -391,7 +431,7 @@ const confirmDelete = async () => {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: linear-gradient(180deg, rgba(6,12,18,0.4), rgba(2,6,20,0.9));
+  background: linear-gradient(180deg, rgba(6, 12, 18, 0.4), rgba(2, 6, 20, 0.9));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -403,12 +443,12 @@ const confirmDelete = async () => {
   width: min(920px, 98%);
   max-width: 920px;
   background: var(--card);
-  border: 1px solid rgba(255,255,255,0.04);
+  border: 1px solid rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(6px);
   border-radius: 12px;
   padding: 18px;
   color: var(--brand-light, #eef6ff);
-  box-shadow: 0 18px 40px rgba(4,10,24,0.56);
+  box-shadow: 0 18px 40px rgba(4, 10, 24, 0.56);
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -420,7 +460,6 @@ const confirmDelete = async () => {
   display: flex;
   flex-direction: column;
   gap: 16px;
-
 }
 
 .modal-card-confirm {
@@ -431,12 +470,11 @@ const confirmDelete = async () => {
   border-radius: 12px;
   padding: 18px;
   color: var(--brand-light, #eef6ff);
-  box-shadow: 0 18px 40px rgba(4,10,24,0.56);
+  box-shadow: 0 18px 40px rgba(4, 10, 24, 0.56);
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
-
 
 /* header */
 .modal-head {
@@ -445,35 +483,57 @@ const confirmDelete = async () => {
   align-items: center;
   gap: 12px;
 }
-.modal-title { margin: 0; font-size: 1.5rem; color: var(--brand-highlight); font-weight: 800; }
+.modal-title {
+  margin: 0;
+  font-size: 1.5rem;
+  color: var(--brand-highlight);
+  font-weight: 800;
+}
 
 /* form grid */
 .form-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
-
 }
-.field{ display:flex; flex-direction:column; gap:6px; width:90%;}
-.field.wide { grid-column: span 2; }
-.field.full { grid-column: 1 / -1;}
-.label { font-size: 0.85rem; color: var(--muted); font-weight:700; }
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 90%;
+}
+.field.wide {
+  grid-column: span 2;
+}
+.field.full {
+  grid-column: 1 / -1;
+}
+.label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 700;
+}
 
 /* prominent Title & Category inputs */
-.title-input, .category-input {
+.title-input,
+.category-input {
   padding: 12px 14px;
   border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.06);
-  background: rgba(0,0,0,0.14);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.14);
   color: var(--brand-light);
   font-size: 1.05rem;
   font-weight: 700;
   outline: none;
-  transition: box-shadow .12s ease, border-color .12s ease, transform .08s ease;
+  transition:
+    box-shadow 0.12s ease,
+    border-color 0.12s ease,
+    transform 0.08s ease;
 }
-.title-input:focus, .category-input:focus {
+.title-input:focus,
+.category-input:focus {
   border-color: var(--brand-vivid);
-  box-shadow: 0 10px 30px rgba(146,49,126,0.12);
+  box-shadow: 0 10px 30px rgba(146, 49, 126, 0.12);
   transform: translateY(-2px);
 }
 
@@ -483,60 +543,98 @@ const confirmDelete = async () => {
   box-shadow: none;
 }
 
-.desc{
+.desc {
   padding: 10px 12px;
   width: 95%;
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.06);
-  background: rgba(0,0,0,0.12);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.12);
   color: var(--brand-light);
   outline: none;
-  transition: box-shadow .12s ease, border-color .12s ease;
+  transition:
+    box-shadow 0.12s ease,
+    border-color 0.12s ease;
 }
-
 
 /* inputs */
-input[type="number"], input[type="date"], textarea, select {
+input[type='number'],
+input[type='date'],
+textarea,
+select {
   padding: 10px 12px;
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.06);
-  background: rgba(0,0,0,0.12);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.12);
   color: var(--brand-light);
   outline: none;
-  transition: box-shadow .12s ease, border-color .12s ease;
+  transition:
+    box-shadow 0.12s ease,
+    border-color 0.12s ease;
 }
-input:focus, textarea:focus, select:focus {
+input:focus,
+textarea:focus,
+select:focus {
   border-color: var(--brand-vivid);
-  box-shadow: 0 8px 24px rgba(146,49,126,0.08);
+  box-shadow: 0 8px 24px rgba(146, 49, 126, 0.08);
 }
 
 /* splits section */
-.splits { display:flex; flex-direction:column; gap:8px; padding-top:6px; border-top: 1px solid rgba(255,255,255,0.02); }
-.splits-head { display:flex; justify-content:space-between; align-items:center; gap:12px; }
-.splits-tools { display:flex; gap:12px; align-items:center; }
+.splits {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.02);
+}
+.splits-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.splits-tools {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
 
 /* split buttons */
-.split-buttons { display:flex; gap:8px; align-items:center; }
+.split-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
 
 /* list rows */
-.splits-list { display:flex; flex-direction:column; gap:8px; margin-top:6px; }
-.split-row {
-  display:flex;
-  gap:8px;
-  align-items:center;
+.splits-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
 }
-.split-row select, .split-row input {
+.split-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.split-row select,
+.split-row input {
   padding: 8px 10px;
   border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.04);
-  background: rgba(255,255,255,0.01);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.01);
   color: var(--brand-light);
 }
-.split-row select { min-width: 220px; }
-.split-row input { width: 120px; }
+.split-row select {
+  min-width: 220px;
+}
+.split-row input {
+  width: 120px;
+}
 
 /* select visibility: make selected username clearly visible */
-select, .split-row select {
+select,
+.split-row select {
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
@@ -544,39 +642,80 @@ select, .split-row select {
   background-image:
     linear-gradient(45deg, transparent 50%, var(--brand-light) 50%),
     linear-gradient(135deg, var(--brand-light) 50%, transparent 50%),
-    linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
   background-position:
     calc(100% - 18px) calc(50% - 3px),
     calc(100% - 13px) calc(50% - 3px),
     right 12px center;
-  background-size: 6px 6px, 6px 6px, 14px;
+  background-size:
+    6px 6px,
+    6px 6px,
+    14px;
   background-repeat: no-repeat;
   padding-right: 40px;
 }
 
-
 /* footer */
-.modal-foot { display:flex; justify-content:right; align-items:center; gap:12px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.02); }
-.foot-actions { display:flex; gap:8px; align-items:center; }
+.modal-foot {
+  display: flex;
+  justify-content: right;
+  align-items: center;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.02);
+}
+.foot-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
 
 /* misc */
-.h4 { margin: 0; font-size: 1rem; font-weight: 800; color: var(--brand-light); }
-.muted { color: var(--muted); }
-.small { font-size: 0.85rem; }
+.h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--brand-light);
+}
+.muted {
+  color: var(--muted);
+}
+.small {
+  font-size: 0.85rem;
+}
 
 /* validation */
-.warn { color: rgb(219, 84, 84); font-weight: 800; }
-.error { color: #ff7b7b; font-weight: 700; }
+.warn {
+  color: rgb(219, 84, 84);
+  font-weight: 800;
+}
+.error {
+  color: #ff7b7b;
+  font-weight: 700;
+}
 
 /* responsive */
 @media (max-width: 920px) {
-  .form-grid { grid-template-columns: repeat(2, 1fr); }
-  .field.wide { grid-column: span 2; }
+  .form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .field.wide {
+    grid-column: span 2;
+  }
 }
 @media (max-width: 520px) {
-  .form-grid { grid-template-columns: 1fr; }
-  .field.wide { grid-column: auto; }
-  .split-row { flex-direction: column; align-items: stretch; }
-  .split-row input { width: 100%; }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  .field.wide {
+    grid-column: auto;
+  }
+  .split-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .split-row input {
+    width: 100%;
+  }
 }
 </style>

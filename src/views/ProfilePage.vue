@@ -1,85 +1,87 @@
-```vue
-// filepath: c:\Users\vypha\OneDrive\Documents\fall_2025\6104\expense-tracker-frontend\expense-tracker\src\views\ProfilePage.vue
+```vue // filepath:
+c:\Users\vypha\OneDrive\Documents\fall_2025\6104\expense-tracker-frontend\expense-tracker\src\views\ProfilePage.vue
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import axios from 'axios';
-import { useUserStore } from '../stores/user';
-const userStore = useUserStore();
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import axios from 'axios'
+import { useUserStore } from '../stores/user'
+const userStore = useUserStore()
 
 // Get current user from localStorage
-const storedUser = localStorage.getItem('currentUser');
-const currentUser = storedUser ? JSON.parse(storedUser) : null;
+const storedUser = localStorage.getItem('currentUser')
+const currentUser = storedUser ? JSON.parse(storedUser) : null
 
-const displayName = ref(currentUser?.displayName || '');
-const username = currentUser?.username.toLowerCase() || '';
-const errorMsg = ref('');
-const successMsg = ref('');
-const editing = ref(false); // track if in edit mode
+const displayName = ref(currentUser?.displayName || '')
+const username = currentUser?.username.toLowerCase() || ''
+const errorMsg = ref('')
+const successMsg = ref('')
+const editing = ref(false) // track if in edit mode
 
-const router = useRouter();
+const router = useRouter()
 
 // Edit display name function
 const saveDisplayName = async () => {
   if (!displayName.value) {
-    errorMsg.value = 'Display name cannot be empty.';
-    return;
+    errorMsg.value = 'Display name cannot be empty.'
+    return
   }
 
   try {
-    const res = await axios.post('http://localhost:8000/api/Authentication/editUser', {
+    const res = await axios.post('/api/Authentication/editUser', {
       user: currentUser._id,
       token: currentUser.token,
-      newDisplayName: displayName.value
-    });
+      newDisplayName: displayName.value,
+    })
 
     if (res.data.error) {
-      errorMsg.value = res.data.error;
-      return;
+      errorMsg.value = res.data.error
+      return
     }
 
     // Update localStorage with user
-    currentUser.displayName = displayName.value;
-    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    currentUser.displayName = displayName.value
+    localStorage.setItem('currentUser', JSON.stringify(currentUser))
 
     // Update userStore
-    userStore.setUser(currentUser);
+    userStore.setUser(currentUser)
 
-    successMsg.value = 'Display name updated!';
-    errorMsg.value = '';
-    editing.value = false; // exit edit mode
+    successMsg.value = 'Display name updated!'
+    errorMsg.value = ''
+    editing.value = false // exit edit mode
 
     // Clear success message after 3 seconds
     setTimeout(() => {
-      successMsg.value = '';
-    }, 3000);
-
+      successMsg.value = ''
+    }, 3000)
   } catch (err) {
-    errorMsg.value = 'Please enter a different name.';
-    console.error(err);
+    errorMsg.value = 'Please enter a different name.'
+    console.error(err)
   }
-};
+}
 
 // Logout function
 const logout = async () => {
-  localStorage.removeItem('currentUser');
-  userStore.clearUser();
-  await axios.post('http://localhost:8000/api/Authentication/logout', { user: currentUser._id, token: currentUser.token });
-  router.push('/login');
-};
+  localStorage.removeItem('currentUser')
+  userStore.clearUser()
+  await axios.post('/api/Authentication/logout', {
+    user: currentUser._id,
+    token: currentUser.token,
+  })
+  router.push('/login')
+}
 
 // Toggle edit mode
 const startEditing = () => {
-  editing.value = true;
-};
+  editing.value = true
+}
 
 // cancel editing helper (UI-only)
 const cancelEditing = () => {
   // reset displayName back to currentUser value to avoid partial edits
-  displayName.value = currentUser?.displayName || '';
-  errorMsg.value = '';
-  editing.value = false;
-};
+  displayName.value = currentUser?.displayName || ''
+  errorMsg.value = ''
+  editing.value = false
+}
 </script>
 
 <template>
@@ -100,8 +102,12 @@ const cancelEditing = () => {
       <!-- Edit area (centered) -->
       <div class="edit-area">
         <template v-if="editing">
-          <input class="input edit-input"  autocomplete="off"
- v-model="displayName" placeholder="Enter new display name" />
+          <input
+            class="input edit-input"
+            autocomplete="off"
+            v-model="displayName"
+            placeholder="Enter new display name"
+          />
           <div class="edit-actions">
             <button class="btn" @click="saveDisplayName">Save</button>
             <button class="btn ghost" @click="cancelEditing">Cancel</button>
@@ -141,10 +147,10 @@ const cancelEditing = () => {
   gap: 16px;
   padding: 28px;
   border-radius: 12px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-  border: 1px solid rgba(255,255,255,0.04);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+  border: 1px solid rgba(255, 255, 255, 0.04);
   backdrop-filter: blur(6px);
-  box-shadow: 0 10px 30px rgba(2,6,23,0.45);
+  box-shadow: 0 10px 30px rgba(2, 6, 23, 0.45);
   color: var(--brand-light, #eef6ff);
   text-align: center; /* ensure headings and text are centered */
 }
@@ -180,7 +186,7 @@ const cancelEditing = () => {
 
 /* muted placeholder when no display name */
 .display-large.muted {
-  color: rgba(255,255,255,0.45);
+  color: rgba(255, 255, 255, 0.45);
   font-weight: 600;
   font-size: 1.1rem;
 }
@@ -188,7 +194,7 @@ const cancelEditing = () => {
 /* username under the display name */
 .username {
   font-size: 0.95rem;
-  color: var(--muted, rgba(255,255,255,0.68));
+  color: var(--muted, rgba(255, 255, 255, 0.68));
   font-weight: 600;
 }
 
@@ -207,15 +213,15 @@ const cancelEditing = () => {
   width: min(420px, 90%);
   padding: 10px 12px;
   border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.06);
-  background: rgba(255,255,255,0.2);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.2);
   color: var(--brand-light, #fff);
   outline: none;
   text-align: center;
 }
 .edit-input:focus {
   border-color: var(--brand-vivid, #92317e);
-  box-shadow: 0 6px 24px rgba(146,49,126,0.12);
+  box-shadow: 0 6px 24px rgba(146, 49, 126, 0.12);
 }
 
 /* Actions next to input */
@@ -226,11 +232,9 @@ const cancelEditing = () => {
   width: 100%;
 }
 
-
-
 /* danger / logout */
 .btn.danger {
-  background: linear-gradient(90deg, rgba(220,40,60,0.95), rgba(160,20,40,0.95));
+  background: linear-gradient(90deg, rgba(220, 40, 60, 0.95), rgba(160, 20, 40, 0.95));
   color: white;
 }
 
@@ -254,11 +258,22 @@ const cancelEditing = () => {
 
 /* Responsive adjustments */
 @media (max-width: 640px) {
-  .display-large { font-size: 1.6rem; }
-  .page-title { font-size: 1.05rem; }
-  .btn { min-width: 72px; padding: 8px 10px; }
-  .profile-inner { padding: 18px; }
-  .edit-input { width: 100%; }
+  .display-large {
+    font-size: 1.6rem;
+  }
+  .page-title {
+    font-size: 1.05rem;
+  }
+  .btn {
+    min-width: 72px;
+    padding: 8px 10px;
+  }
+  .profile-inner {
+    padding: 18px;
+  }
+  .edit-input {
+    width: 100%;
+  }
 }
 </style>
 ```
