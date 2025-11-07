@@ -167,21 +167,6 @@ const updateExpense = async () => {
     })
     const oldSplits = Array.isArray(oldSplitsRes.data.splits) ? oldSplitsRes.data.splits : []
 
-    // Reverse debt effect of old splits
-    // for (const split of oldSplits) {
-    //   try {
-    //     const userId = split.user._id || split.user
-    //     const amount = split.amountOwed
-    //     await api.post('/api/Debt/updateDebt', {
-    //       payer: payer.value,
-    //       receiver: userId,
-    //       amount: -amount,
-    //     })
-    //   } catch (err) {
-    //     console.error(`Error reversing debt for ${split.user?._id || split.user}`, err)
-    //   }
-    // }
-
     // Remove old splits
     for (const split of oldSplits) {
       await api.post('/api/Expense/removeUserSplit', {
@@ -203,15 +188,6 @@ const updateExpense = async () => {
         token: userStore.currentUser?.token,
         creator: userStore.currentUser?._id,
       })
-      //   try {
-      // await api.post('/api/Debt/updateDebt', {
-      //   payer: payer.value,
-      //   receiver: split.userId,
-      //   amount: split.amount,
-      // })
-      //   } catch (err) {
-      //     console.error(`Error updating debt for ${split.userId}`, err)
-      //   }
     }
 
     // Update expense details
@@ -335,7 +311,12 @@ const confirmDelete = async () => {
             <label class="label">Payer</label>
             <select v-model="payer">
               <option value="">Select payer</option>
-              <option v-for="m in members" :key="m._id" :value="m._id">
+              <option
+                style="background-color: var(--brand-deep)"
+                v-for="m in members"
+                :key="m._id"
+                :value="m._id"
+              >
                 {{ m.displayName }}
               </option>
             </select>
