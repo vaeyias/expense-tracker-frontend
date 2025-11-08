@@ -89,10 +89,14 @@ const login = async () => {
 
     const { user: userId, token } = res.data
 
+    const resUser = await api.post('/api/Authentication/_getUserById', {
+      user: userId,
+    })
+
     const userInfo = {
       _id: userId,
       username: username.value.toLowerCase(),
-      displayName: username.value, // or pull from DB if needed
+      displayName: resUser.data.userInfo.displayName,
       token,
     }
 

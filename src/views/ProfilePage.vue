@@ -33,10 +33,7 @@ const saveDisplayName = async () => {
       token: currentUser.token,
     })
 
-    console.log('EDIT USER RES:', res)
-
     if (res.data.error) {
-      console.log('EDIT USER ERROR:', res)
       errorMsg.value = res.data.error
       return
     }
