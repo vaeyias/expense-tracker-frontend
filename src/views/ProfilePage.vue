@@ -29,11 +29,14 @@ const saveDisplayName = async () => {
   try {
     const res = await api.post('/api/Authentication/editUser', {
       user: currentUser._id,
-      token: currentUser.token,
       newDisplayName: displayName.value,
+      token: currentUser.token,
     })
 
+    console.log('EDIT USER RES:', res)
+
     if (res.data.error) {
+      console.log('EDIT USER ERROR:', res)
       errorMsg.value = res.data.error
       return
     }

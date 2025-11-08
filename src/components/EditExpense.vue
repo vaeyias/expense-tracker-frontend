@@ -189,6 +189,7 @@ const updateExpense = async () => {
         creator: userStore.currentUser?._id,
       })
     }
+    console.log(description.value)
 
     // Update expense details
     const res = await api.post('/api/Expense/editExpense', {
